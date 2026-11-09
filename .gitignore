@@ -1,0 +1,11 @@
+# signing keys never go in the repo
+*.keystore
+*.jks
+keystore-base64.txt
+SIGNING-KEY-KEEP-SAFE.txt
+# server runtime
+server/spearhead.db*
+server/venv/
+server/static/downloads/*.apk
+server/static/downloads/version.txt
+__pycache__/

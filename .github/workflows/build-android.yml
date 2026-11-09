@@ -1,0 +1,83 @@
+name: Build Android app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ github.run_number }}
+      SERVER_URL: ${{ vars.SERVER_URL }}   # optional: Settings → Secrets and variables → Actions → Variables
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install and prepare app
+        working-directory: app
+        run: |
+          npm ci || npm install
+          npm run sync
+
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Add the KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD secrets (see README)"; exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        working-directory: app/android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Package for the Pi
+        run: |
+          mkdir -p out/downloads
+          cp app/android/app/build/outputs/apk/release/app-release.apk out/downloads/spearhead-league.apk
+          echo "$APP_VERSION" > out/downloads/version.txt
+          cd out && zip -r ../spearhead-pi-download.zip downloads
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spearhead-league-build-${{ github.run_number }}
+          path: |
+            out/downloads/spearhead-league.apk
+            spearhead-pi-download.zip
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Spearhead League app — build ${{ github.run_number }}
+          body: |
+            Android app build ${{ github.run_number }}.
+            To update the Pi: unzip spearhead-pi-download.zip into server/static/ (it contains downloads/spearhead-league.apk and downloads/version.txt).
+            Players' apps will then show "update available".
+          files: |
+            out/downloads/spearhead-league.apk
+            spearhead-pi-download.zip
+          make_latest: true
