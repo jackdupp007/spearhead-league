@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_VERSION: ${{ github.run_number }}
-      SERVER_URL: ${{ vars.SERVER_URL }}   # optional: Settings → Secrets and variables → Actions → Variables
+      # Club server built into the app. Override with a repo variable SERVER_URL if the address ever changes.
+      SERVER_URL: ${{ vars.SERVER_URL || 'http://dirtyspearhead.ddns.net:5050' }}
     steps:
       - uses: actions/checkout@v4
 
