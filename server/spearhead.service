@@ -7,7 +7,7 @@ Wants=network-online.target
 User=pi
 WorkingDirectory=/home/pi/spearhead
 Environment=ADMIN_KEY=change-me-to-something-secret
-ExecStart=/home/pi/spearhead/venv/bin/gunicorn -w 1 --threads 8 -b 0.0.0.0:5050 app:app
+ExecStart=/home/pi/spearhead/venv/bin/gunicorn -w 1 --threads 8 -b 0.0.0.0:8095 app:app
 Restart=always
 RestartSec=3
 

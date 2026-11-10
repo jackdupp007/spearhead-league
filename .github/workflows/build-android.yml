@@ -14,7 +14,7 @@ jobs:
     env:
       APP_VERSION: ${{ github.run_number }}
       # Club server built into the app. Override with a repo variable SERVER_URL if the address ever changes.
-      SERVER_URL: ${{ vars.SERVER_URL || 'http://dirtyspearhead.ddns.net:5050' }}
+      SERVER_URL: ${{ vars.SERVER_URL || 'http://dirtyspearhead.ddns.net:8095' }}
     steps:
       - uses: actions/checkout@v4
 

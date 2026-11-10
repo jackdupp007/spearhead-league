@@ -4,7 +4,7 @@ Flask + SQLite. Run:  python app.py   (or via gunicorn / the systemd unit in REA
 Env vars:
   ADMIN_KEY      key for the Admin page (settings, rename/delete players, fix/delete games)
   SPEARHEAD_DB   path to the SQLite file (default: spearhead.db next to this file)
-  PORT           port to listen on (default 5050)
+  PORT           port to listen on (default 8095)
 """
 import json
 import os
@@ -419,4 +419,4 @@ def export():
 init_db()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5050)), threaded=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8095)), threaded=True)

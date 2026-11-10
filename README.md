@@ -41,7 +41,7 @@ scp -r server pi@<pi-ip>:/home/pi/spearhead       # from your PC
 ssh pi@<pi-ip>
 cd /home/pi/spearhead
 python3 -m venv venv && venv/bin/pip install -r requirements.txt
-ADMIN_KEY=test venv/bin/python app.py              # quick test → http://<pi-ip>:5050
+ADMIN_KEY=test venv/bin/python app.py              # quick test → http://<pi-ip>:8095
 ```
 
 Run it as a service (starts on boot):
@@ -53,7 +53,7 @@ sudo systemctl daemon-reload && sudo systemctl enable --now spearhead
 journalctl -u spearhead -f        # logs
 ```
 
-**Make it reachable from outside:** the hostname is **dirtyspearhead.ddns.net** (No-IP). Give the Pi a fixed IP (DHCP reservation), and forward an external port on the router to the Pi's port **5050**. The Ghyran app keeps 5000. The club server address is then `http://dirtyspearhead.ddns.net:5050`.
+**Make it reachable from outside:** the hostname is **dirtyspearhead.ddns.net** (No-IP). Give the Pi a fixed IP (DHCP reservation), and forward an external port on the router to the Pi's port **8095**. Ports 5000–5250 are used by Traccar on this Pi, so Spearhead uses 8095. The club server address is then `http://dirtyspearhead.ddns.net:8095`.
 
 **Backups:** copy `spearhead.db` (stop the service first), or use Admin → Download backup from a computer.
 
@@ -65,7 +65,7 @@ journalctl -u spearhead -f        # logs
    - `KEYSTORE_PASSWORD`
    - `KEY_ALIAS`
    - `KEY_PASSWORD`
-3. The club server `http://dirtyspearhead.ddns.net:5050` is already built into the app, so players never type an address. If it ever changes, add a repo **Variable** `SERVER_URL` with the new address and rebuild.
+3. The club server `http://dirtyspearhead.ddns.net:8095` is already built into the app, so players never type an address. If it ever changes, add a repo **Variable** `SERVER_URL` with the new address and rebuild.
 4. Go to **Actions → Build Android app → Run workflow**. It also runs on every push to `main`. After about 5 minutes the **Releases** page has:
    - `spearhead-league.apk`: the app itself
    - `spearhead-pi-download.zip`: the app ready to put on the Pi
@@ -75,7 +75,7 @@ journalctl -u spearhead -f        # logs
 ## Part 3 — Get the app onto phones
 
 1. Unzip `spearhead-pi-download.zip` into `server/static/` on the Pi. That creates `static/downloads/spearhead-league.apk` and `version.txt`. No restart needed.
-2. Players open `http://dirtyspearhead.ddns.net:5050` in their phone browser and tap **Download the app**. Or share the link `http://dirtyspearhead.ddns.net:5050/download` in the club chat.
+2. Players open `http://dirtyspearhead.ddns.net:8095` in their phone browser and tap **Download the app**. Or share the link `http://dirtyspearhead.ddns.net:8095/download` in the club chat.
 3. Open the downloaded file. Android will ask to allow installs from the browser the first time.
 
 **Updating:** when you build a new version and put the new zip on the Pi, everyone's app shows **"A new version is available — Update"**.

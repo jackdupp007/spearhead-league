@@ -265,7 +265,7 @@ function myLiveBanner(v,a){
 }
 function vConnect(){
  return`<div class="hero">${CREST}<h1>Spearhead League</h1><div class="sub">Age of Sigmar</div></div><main><div class="card"><h2>Connect to your club</h2>
- <p class="small muted" style="margin-top:0">Enter the club server address your organiser gave you, e.g. <b>http://myclub.myddns.me:5050</b></p>
+ <p class="small muted" style="margin-top:0">Enter the club server address your organiser gave you, e.g. <b>http://myclub.myddns.me:8095</b></p>
  <input id="srv" style="width:100%" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="http://…" value="${esc(BASE||ls.get(SRV_KEY)||window.SPEARHEAD_SERVER||"")}">
  <button class="btn pri big" style="margin-top:12px" data-act="connect">Connect</button>
  ${S&&NATIVE&&BASE?`<button class="btn big" style="margin-top:8px" data-act="cancelConnect">Cancel</button>`:""}</div></main>`;
