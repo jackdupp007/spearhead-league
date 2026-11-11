@@ -317,8 +317,7 @@ function sideCard(g,s,edit){
  const t=totals(g),team=g.teams[s];
  return`<div class="side ${s?"b":"a"}"><div class="nm">${team.map(id=>esc(pn(id))).join("<br>")}</div><div class="fac">${team.map(id=>esc(g.factions[id]||"")).filter(Boolean).join(" · ")}</div>
  <div class="big">${t[s]}</div><div class="small muted">total VP</div>
- <div class="ctr"><span class="l">Round ${g.round} VP</span>${edit?`<button data-act="vp" data-v="${s}:-1">−</button>`:""}<span class="v">${g.vp[g.round-1][s]}</span>${edit?`<button data-act="vp" data-v="${s}:1">+</button>`:""}</div>
- <div class="cpp">${team.map(id=>`<div class="ctr"><span class="l">${team.length>1?esc(pn(id))+" · ":""}CP</span>${edit?`<button data-act="cp" data-v="${id}:-1">−</button>`:""}<span class="v">${g.cp[id]||0}</span>${edit?`<button data-act="cp" data-v="${id}:1">+</button>`:""}</div>`).join("")}</div></div>`;
+ <div class="ctr"><span class="l">Round ${g.round} VP</span>${edit?`<button data-act="vp" data-v="${s}:-1">−</button>`:""}<span class="v">${g.vp[g.round-1][s]}</span>${edit?`<button data-act="vp" data-v="${s}:1">+</button>`:""}</div></div>`;
 }
 function awardTable(g){
  const aw=ladder().awards[g.id];
@@ -357,7 +356,7 @@ function vNew(){
  return`<div class="card"><div class="row between"><h2 style="margin:0">New game</h2><div class="seg"><button data-act="newMode" data-v="1v1" class="${mode==="1v1"?"on":""}">1v1</button><button data-act="newMode" data-v="2v2" class="${mode==="2v2"?"on":""}">2v2</button></div></div>
  <div class="teams" style="margin-top:12px"><div><h3 style="margin-top:0">${mode==="2v2"?"Team A":"Side A"}</h3><div style="display:grid;gap:8px">${A.join("")}</div></div>
  <div><h3 style="margin-top:0">${mode==="2v2"?"Team B":"Side B"}</h3><div style="display:grid;gap:8px">${B.join("")}</div></div></div>
- ${mode==="2v2"?`<p class="small muted">2v2: each team scores one combined VP total per round; each player keeps their own command points. Every player on the winning team gets the win points.</p>`:""}
+ ${mode==="2v2"?`<p class="small muted">2v2: each team scores one combined VP total per round. Every player on the winning team gets the win points.</p>`:""}
  <div class="chk" style="margin-top:12px"><label><input type="checkbox" id="n-ladder" data-keep checked> Counts toward the ladder</label><label><input type="checkbox" id="n-final" data-keep data-ch="final" ${ui.finalOnly?"checked":""}> Already played — just enter the final score</label></div>
  ${ui.finalOnly?`<div class="row" style="margin-top:10px"><span class="grow">Final VP</span><input type="number" id="n-va" data-keep placeholder="A"> – <input type="number" id="n-vb" data-keep placeholder="B"></div>`:""}
  <details style="margin-top:12px"><summary class="small" style="cursor:pointer;color:var(--gold2)">＋ Add a player who isn't on the list (no phone)</summary>

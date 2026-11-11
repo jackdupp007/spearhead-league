@@ -14,7 +14,7 @@ app/      Android app (Capacitor) — uses the same screens as server/static/ind
 - **PINs:** only a logged-in player can start games and score them, and only games they're playing in. Five wrong PINs locks that name for 5 minutes. Forgot a PIN? Admin → Players → Reset PIN. Players created before PINs existed set their PIN the first time they log in.
 - **Player without a phone?** On the New game screen, open "Add a player who isn't on the list", let them type their own PIN, and score the game for both sides on your phone.
 - **Starts on the Ladder:** one ladder for both 1v1 and 2v2. Tap **Play** next to anyone, or use **Suggested for you**.
-- **Live game:** both players tap VP +/− for each battle round and track their own command points. Scores sync between phones, and anyone can watch from the **Live** tab. Only the players in the game (or the admin) can change the score.
+- **Live game:** both players tap VP +/− for each battle round. Scores sync between phones, and anyone can watch from the **Live** tab. Only the players in the game (or the admin) can change the score.
 - **2v2:** each team scores one combined VP total per round. Every player on the winning team gets the win points.
 - **Match-ups:** tick who's here for suggested 1v1 pairings or balanced 2v2 teams. These are only suggestions.
 - **Already played?** On the New game screen, tick "Already played — just enter the final score".
