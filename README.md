@@ -10,7 +10,9 @@ app/      Android app (Capacitor) — uses the same screens as server/static/ind
 
 ## How it plays
 
-- **First open:** the app asks for the club server address (unless one is built in, see below). Then the person taps their name, adds themselves as a new player, or continues as a viewer.
+- **First open:** the app connects to the club server, then the person either registers (name, faction and a 4–6 digit PIN), logs in by tapping their name and entering their PIN, or continues as a viewer.
+- **PINs:** only a logged-in player can start games and score them, and only games they're playing in. Five wrong PINs locks that name for 5 minutes. Forgot a PIN? Admin → Players → Reset PIN. Players created before PINs existed set their PIN the first time they log in.
+- **Player without a phone?** On the New game screen, open "Add a player who isn't on the list", let them type their own PIN, and score the game for both sides on your phone.
 - **Starts on the Ladder:** one ladder for both 1v1 and 2v2. Tap **Play** next to anyone, or use **Suggested for you**.
 - **Live game:** both players tap VP +/− for each battle round and track their own command points. Scores sync between phones, and anyone can watch from the **Live** tab. Only the players in the game (or the admin) can change the score.
 - **2v2:** each team scores one combined VP total per round. Every player on the winning team gets the win points.
@@ -92,6 +94,6 @@ Tap **Admin** at the bottom of any screen and enter your `ADMIN_KEY` to:
 
 ## Notes
 
-- Players don't have passwords. It's a club app, so anyone can tap any name. Score changes are limited to the players in the game, and fixes or deletions need the admin key.
+- Each player has a PIN, and only the players in a game can score it. Fixes, deletions and PIN resets need the admin key.
 - The connection to the Pi is plain http unless you add HTTPS (e.g. Caddy in front with ports 80/443 forwarded). If you do, change the server address to `https://…`.
 - Keep gunicorn at `-w 1` (one worker with threads) so score taps from both phones never clash.

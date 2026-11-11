@@ -6,8 +6,11 @@ Env vars:
   SPEARHEAD_DB   path to the SQLite file (default: spearhead.db next to this file)
   PORT           port to listen on (default 8095)
 """
+import hashlib
+import hmac
 import json
 import os
+import secrets
 import sqlite3
 import threading
 import time
@@ -33,7 +36,7 @@ def cors(resp):
     # The Android app runs from its own origin, so the API must allow cross-origin calls.
     if request.path.startswith("/api/"):
         resp.headers["Access-Control-Allow-Origin"] = "*"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Admin-Key"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Admin-Key, X-Player-Token"
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
     return resp
 
@@ -69,7 +72,11 @@ def init_db():
         id TEXT PRIMARY KEY, status TEXT NOT NULL, mode TEXT NOT NULL,
         created REAL, updated REAL, finished REAL, data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT);
+    CREATE TABLE IF NOT EXISTS sessions(token TEXT PRIMARY KEY, pid TEXT NOT NULL, created REAL);
     """)
+    cols = {r[1] for r in con.execute("PRAGMA table_info(players)")}
+    if "pin_hash" not in cols:
+        con.execute("ALTER TABLE players ADD COLUMN pin_hash TEXT DEFAULT ''")
     con.execute("INSERT OR IGNORE INTO meta VALUES('rev','1')")
     con.execute("INSERT OR IGNORE INTO meta VALUES('settings',?)", (json.dumps(DEFAULT_SETTINGS),))
     con.commit()
@@ -110,7 +117,8 @@ def state():
     return {
         "rev": int(get_meta("rev")),
         "settings": settings(),
-        "players": [dict(r) for r in d.execute("SELECT * FROM players ORDER BY name COLLATE NOCASE")],
+        "players": [{"id": r["id"], "name": r["name"], "faction": r["faction"], "has_pin": bool(r["pin_hash"])}
+                    for r in d.execute("SELECT * FROM players ORDER BY name COLLATE NOCASE")],
         "games": [game_out(r) for r in d.execute(
             "SELECT * FROM games WHERE status IN ('live','done') ORDER BY created")],
         "server_time": time.time(),
@@ -139,6 +147,62 @@ def need_admin():
         abort(403, "Admin key required")
 
 
+# ---------------------------------------------------------------- player PINs
+FAILS = {}  # pid -> [count, locked_until]
+
+
+def hash_pin(pin):
+    salt = secrets.token_hex(8)
+    dk = hashlib.pbkdf2_hmac("sha256", pin.encode(), salt.encode(), 100_000).hex()
+    return f"{salt}${dk}"
+
+
+def check_pin(pin, stored):
+    try:
+        salt, dk = stored.split("$", 1)
+    except ValueError:
+        return False
+    return hmac.compare_digest(hashlib.pbkdf2_hmac("sha256", pin.encode(), salt.encode(), 100_000).hex(), dk)
+
+
+def valid_pin(pin):
+    pin = str(pin or "").strip()
+    if not (pin.isdigit() and 4 <= len(pin) <= 6):
+        abort(400, "PIN must be 4 to 6 digits")
+    return pin
+
+
+def new_session(pid):
+    token = secrets.token_urlsafe(24)
+    db().execute("INSERT INTO sessions VALUES(?,?,?)", (token, pid, time.time()))
+    return token
+
+
+def current_player():
+    token = request.headers.get("X-Player-Token") or ""
+    if not token:
+        return None
+    r = db().execute("SELECT pid FROM sessions WHERE token=?", (token,)).fetchone()
+    return r["pid"] if r else None
+
+
+def need_player():
+    pid = current_player()
+    if not pid:
+        abort(401, "Please log in with your PIN")
+    return pid
+
+
+def need_in_game(d):
+    if is_admin():
+        return
+    pid = need_player()
+    if not any(pid in t for t in d["teams"]):
+        abort(403, "Only the players in this game can change it")
+
+
+@app.errorhandler(401)
+@app.errorhandler(429)
 @app.errorhandler(400)
 @app.errorhandler(403)
 @app.errorhandler(404)
@@ -180,13 +244,60 @@ def add_player():
     name = (b.get("name") or "").strip()[:40]
     if not name:
         abort(400, "Name required")
+    pin = valid_pin(b.get("pin"))
     with WRITE_LOCK:
         if db().execute("SELECT 1 FROM players WHERE name=?", (name,)).fetchone():
             abort(409, "That name is already taken — pick it from the list instead")
         pid = uuid.uuid4().hex[:10]
-        db().execute("INSERT INTO players VALUES(?,?,?,?)",
-                     (pid, name, (b.get("faction") or "")[:60], time.time()))
-        return commit_and_state(new_id=pid)
+        db().execute("INSERT INTO players(id,name,faction,created,pin_hash) VALUES(?,?,?,?,?)",
+                     (pid, name, (b.get("faction") or "")[:60], time.time(), hash_pin(pin)))
+        token = new_session(pid)
+        return commit_and_state(new_id=pid, token=token)
+
+
+@app.post("/api/login")
+def login():
+    b = body()
+    pid = b.get("pid") or ""
+    pin = valid_pin(b.get("pin"))
+    with WRITE_LOCK:
+        r = db().execute("SELECT * FROM players WHERE id=?", (pid,)).fetchone()
+        if not r:
+            abort(404, "Player not found")
+        cnt, until = FAILS.get(pid, [0, 0])
+        if until > time.time():
+            abort(429, f"Too many wrong PINs — try again in {int(until - time.time()) // 60 + 1} min")
+        if not r["pin_hash"]:
+            # player created before PINs existed: the first PIN entered becomes theirs
+            db().execute("UPDATE players SET pin_hash=? WHERE id=?", (hash_pin(pin), pid))
+        elif not check_pin(pin, r["pin_hash"]):
+            cnt += 1
+            FAILS[pid] = [0, time.time() + 300] if cnt >= 5 else [cnt, 0]
+            abort(403, "Wrong PIN" + (" — locked for 5 minutes" if cnt >= 5 else ""))
+        FAILS.pop(pid, None)
+        token = new_session(pid)
+        return commit_and_state(token=token, new_id=pid)
+
+
+@app.post("/api/logout")
+def logout():
+    token = request.headers.get("X-Player-Token") or ""
+    with WRITE_LOCK:
+        db().execute("DELETE FROM sessions WHERE token=?", (token,))
+        db().commit()
+    return jsonify(ok=True)
+
+
+@app.post("/api/players/<pid>/reset-pin")
+def reset_pin(pid):
+    need_admin()
+    pin = valid_pin(body().get("pin"))
+    with WRITE_LOCK:
+        if not db().execute("SELECT 1 FROM players WHERE id=?", (pid,)).fetchone():
+            abort(404, "Player not found")
+        db().execute("UPDATE players SET pin_hash=? WHERE id=?", (hash_pin(pin), pid))
+        db().execute("DELETE FROM sessions WHERE pid=?", (pid,))  # log them out everywhere
+        return commit_and_state()
 
 
 @app.patch("/api/players/<pid>")
@@ -196,6 +307,8 @@ def edit_player(pid):
         if not db().execute("SELECT 1 FROM players WHERE id=?", (pid,)).fetchone():
             abort(404, "Player not found")
         if "faction" in b:
+            if not is_admin() and need_player() != pid:
+                abort(403, "You can only change your own faction")
             db().execute("UPDATE players SET faction=? WHERE id=?", ((b["faction"] or "")[:60], pid))
         if "name" in b:
             need_admin()
@@ -218,6 +331,7 @@ def del_player(pid):
             if any(pid in t for t in d["teams"]):
                 abort(409, "Player has games — they can't be deleted")
         db().execute("DELETE FROM players WHERE id=?", (pid,))
+        db().execute("DELETE FROM sessions WHERE pid=?", (pid,))
         return commit_and_state()
 
 
@@ -242,6 +356,8 @@ def new_game():
     with WRITE_LOCK:
         teams = b.get("teams")
         flat = valid_teams(mode, teams)
+        if not is_admin() and need_player() not in flat:
+            abort(403, "You can only start games you're playing in")
         rounds = int(settings()["rounds"])
         factions = {p: str((b.get("factions") or {}).get(p) or "")[:60] for p in flat}
         now = time.time()
@@ -272,6 +388,7 @@ def mutate_live(gid, fn):
         if r["status"] != "live":
             abort(409, "This game has already finished")
         d = json.loads(r["data"])
+        need_in_game(d)
         fn(d)
         db().execute("UPDATE games SET data=?, updated=? WHERE id=?", (json.dumps(d), time.time(), gid))
         return commit_and_state()
@@ -319,6 +436,7 @@ def game_finish(gid):
         r = game_row(gid)
         if r["status"] != "live":
             abort(409, "Already finished")
+        need_in_game(json.loads(r["data"]))
         now = time.time()
         db().execute("UPDATE games SET status='done', finished=?, updated=? WHERE id=?", (now, now, gid))
         return commit_and_state()
@@ -330,6 +448,7 @@ def game_abandon(gid):
         r = game_row(gid)
         if r["status"] != "live":
             abort(409, "Only live games can be abandoned")
+        need_in_game(json.loads(r["data"]))
         db().execute("DELETE FROM games WHERE id=?", (gid,))
         return commit_and_state()
 

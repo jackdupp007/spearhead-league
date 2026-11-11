@@ -143,7 +143,7 @@ const fdate=ts=>ts?new Date(ts*1000).toLocaleDateString("en-AU",{day:"numeric",m
 const totals=g=>[0,1].map(s=>g.vp.reduce((n,r)=>n+(r[s]||0),0));
 const res=g=>{const t=totals(g);return t[0]>t[1]?1:t[0]<t[1]?0:.5};
 const players=()=>S.players.slice().sort((a,b)=>a.name.localeCompare(b.name));
-const isPlayer=()=>ME&&ME.role==="player"&&P(ME.pid);
+const isPlayer=()=>ME&&ME.role==="player"&&ME.token&&P(ME.pid);
 const inGame=(g,pid)=>g.teams.some(t=>t.includes(pid));
 const canScore=g=>isAdmin||(isPlayer()&&inGame(g,ME.pid));
 const liveGames=()=>S.games.filter(g=>g.status==="live");
@@ -155,8 +155,9 @@ function openExternal(url){if(NATIVE&&PLUG.Browser)PLUG.Browser.open({url});else
 /* ---------- server ---------- */
 async function api(method,url,data){
  let r,j={};
- try{r=await fetch(BASE+url,{method,headers:{"Content-Type":"application/json","X-Admin-Key":ADMIN},body:data?JSON.stringify(data):undefined});j=await r.json().catch(()=>({}))}
+ try{r=await fetch(BASE+url,{method,headers:{"Content-Type":"application/json","X-Admin-Key":ADMIN,"X-Player-Token":(ME&&ME.token)||""},body:data?JSON.stringify(data):undefined});j=await r.json().catch(()=>({}))}
  catch(e){toast("Can't reach the club server — check your connection");throw e}
+ if(r.status===401&&ME&&ME.role==="player"){const pid=ME.pid;setMe(null);toast(j.error||"Please log in again");go("login/"+pid);throw new Error("login")}
  if(!r.ok){toast(j.error||"Something went wrong");throw new Error(j.error)}
  if(j.players){S=j;LCACHE=null;offline=false}
  return j;
@@ -232,21 +233,21 @@ function suggest2v2(ids){
 /* ---------- render ---------- */
 const CREST=`<svg class="crest" viewBox="0 0 64 64"><defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6dc95"/><stop offset="1" stop-color="#a87a2a"/></linearGradient></defs><path d="M32 3 L56 14 L52 44 L32 61 L12 44 L8 14Z" fill="#1d1a21" stroke="url(#gg)" stroke-width="3"/><path d="M32 12 L36 30 L32 52 L28 30Z" fill="url(#gg)"/><path d="M20 26 h24 v4 h-24z" fill="url(#gg)"/></svg>`;
 function route(){const h=(location.hash||"").slice(1).split("/");return{v:h[0]||"ladder",a:h[1]||""}}
-const FORM_VIEWS=["welcome","new","admin","me","connect"];
+const FORM_VIEWS=["welcome","login","new","admin","me","connect"];
 function softRender(){const{v}=route();if(FORM_VIEWS.includes(v)&&!offline)return;render()}
 function render(){
  let {v,a}=route();
  if(NATIVE&&!BASE){if(v!=="connect"){location.replace("#connect");return}$("#root").innerHTML=vConnect();return}
  if(v==="connect"){$("#root").innerHTML=vConnect();return}
  if(!S)return;
- if(!ME&&v!=="welcome"){location.replace("#welcome");return}
- if(ME&&ME.role==="player"&&!P(ME.pid)&&v!=="welcome"){ME=null;location.replace("#welcome");return}
+ if(!ME&&v!=="welcome"&&v!=="login"){location.replace("#welcome");return}
+ if(ME&&ME.role==="player"&&(!P(ME.pid)||!ME.token)&&v!=="welcome"&&v!=="login"){const pid=ME.pid;setMe(null);location.replace(P(pid)?"#login/"+pid:"#welcome");return}
  const y=window.scrollY,keep={};document.querySelectorAll("[data-keep]").forEach(e=>keep[e.id]=e.type==="checkbox"?e.checked:e.value);
- const views={welcome:vWelcome,ladder:vLadder,live:vLive,game:()=>vGame(a),new:vNew,matchups:vMatch,history:vHistory,admin:vAdmin,me:vMe};
+ const views={welcome:vWelcome,login:()=>vLogin(a),ladder:vLadder,live:vLive,game:()=>vGame(a),new:vNew,matchups:vMatch,history:vHistory,admin:vAdmin,me:vMe};
  const body=(views[v]||vLadder)();
  const nLive=liveGames().length;
  const tabs=[["ladder","Ladder"],["live",`Live${nLive?`<span class="dot">${nLive}</span>`:""}`],["matchups","Match-ups"],["history","History"]];
- $("#root").innerHTML=v==="welcome"?body:`<header>${CREST}<div><h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League</div></div>
+ $("#root").innerHTML=(v==="welcome"||v==="login")?body:`<header>${CREST}<div><h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League</div></div>
   <a class="who" href="#me">${isPlayer()?`<b>${esc(pn(ME.pid))}</b>`:"Viewer"} ▾</a></header>
   <nav>${tabs.map(([k,l])=>`<a href="#${k}" class="${(v===k||(v==="game"&&k==="live"))?"on":""}">${l}</a>`).join("")}</nav>
   ${offline?`<div class="offline">Can't reach the club server — retrying…</div>`:""}
@@ -275,12 +276,22 @@ function vWelcome(){
  if(ui.welcomeNew)return`<div class="hero">${CREST}<h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League</div></div><main><div class="card"><h2>New player</h2>
   <label class="lb">Your name</label><input id="wn-name" data-keep style="width:100%" placeholder="Name the club knows you by">
   <label class="lb" style="margin-top:10px">Usual faction</label><select id="wn-fac" data-keep style="width:100%">${facOpts("")}</select>
+  <div class="row" style="margin-top:10px"><div class="grow"><label class="lb">Choose a PIN (4–6 digits)</label><input id="wn-pin" data-keep type="password" inputmode="numeric" maxlength="6" style="width:100%"></div><div class="grow"><label class="lb">PIN again</label><input id="wn-pin2" data-keep type="password" inputmode="numeric" maxlength="6" style="width:100%"></div></div>
+  <p class="small muted">You'll use this PIN to log in on your phone. The organiser can reset it if you forget.</p>
   <div class="row" style="margin-top:14px"><button class="btn" data-act="welcomeBack">Back</button><button class="btn pri grow" data-act="joinNew">Join the ladder</button></div></div></main>`;
  return`<div class="hero">${CREST}<h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League · Age of Sigmar</div></div>
- <main>${getApp}<div class="card"><h2>I'm playing</h2>${S.players.length?`<p class="small muted" style="margin-top:0">Tap your name.</p><div class="plist">${players().map(p=>`<button class="chip" data-act="iam" data-v="${p.id}"><b>${esc(p.name)}</b><span class="fac">${esc(p.faction||"")}</span></button>`).join("")}</div>`:""}
+ <main>${getApp}<div class="card"><h2>I'm playing</h2>${S.players.length?`<p class="small muted" style="margin-top:0">Tap your name, then enter your PIN.</p><div class="plist">${players().map(p=>`<button class="chip" data-act="iam" data-v="${p.id}"><b>${esc(p.name)}</b><span class="fac">${esc(p.faction||"")}</span></button>`).join("")}</div>`:""}
  <button class="btn big" style="margin-top:12px" data-act="welcomeNew">＋ I'm new — add me</button></div>
  <div class="card"><h2>Just watching</h2><p class="small muted" style="margin-top:0">See the ladder and follow live games. No scoring.</p><button class="btn big" data-act="viewer">Continue as viewer</button></div>
  ${NATIVE?`<p class="small muted" style="text-align:center">Server: ${esc(BASE)} · <a href="#connect" style="color:var(--mut)">change</a></p>`:""}</main>`;
+}
+function vLogin(pid){
+ const p=P(pid);if(!p)return vWelcome();
+ return`<div class="hero">${CREST}<h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League</div></div><main><div class="card"><h2>${esc(p.name)}</h2>
+  <label class="lb">${p.has_pin?"Your PIN":"First time here — choose a PIN (4–6 digits)"}</label>
+  <input id="li-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="off" style="width:100%;font-size:22px;letter-spacing:.3em;text-align:center">
+  <div class="row" style="margin-top:14px"><a class="btn" href="#welcome">Back</a><button class="btn pri grow" data-act="login" data-v="${p.id}">Log in</button></div>
+  <p class="small muted">Not ${esc(p.name)}? Go back and pick your own name. Forgot your PIN? Ask the organiser to reset it.</p></div></main>`;
 }
 function pointsRule(){const s=S.settings;return`Win ${s.win} · Draw ${s.draw} · Loss ${s.loss}${s.play?` · +${s.play} for playing`:""}${s.upset?` · +${s.upset} upset bonus for beating someone ranked above you`:""}. 1v1 and 2v2 both count — in 2v2 each player on the team gets the points, and an upset is judged on the teams' average ladder position. Ties: VP difference, then wins.`}
 function vLadder(){
@@ -349,6 +360,9 @@ function vNew(){
  ${mode==="2v2"?`<p class="small muted">2v2: each team scores one combined VP total per round; each player keeps their own command points. Every player on the winning team gets the win points.</p>`:""}
  <div class="chk" style="margin-top:12px"><label><input type="checkbox" id="n-ladder" data-keep checked> Counts toward the ladder</label><label><input type="checkbox" id="n-final" data-keep data-ch="final" ${ui.finalOnly?"checked":""}> Already played — just enter the final score</label></div>
  ${ui.finalOnly?`<div class="row" style="margin-top:10px"><span class="grow">Final VP</span><input type="number" id="n-va" data-keep placeholder="A"> – <input type="number" id="n-vb" data-keep placeholder="B"></div>`:""}
+ <details style="margin-top:12px"><summary class="small" style="cursor:pointer;color:var(--gold2)">＋ Add a player who isn't on the list (no phone)</summary>
+ <div class="slot" style="margin-top:8px"><input id="ap-name" placeholder="Their name"><select id="ap-fac">${facOpts("")}</select><input id="ap-pin" type="password" inputmode="numeric" maxlength="6" placeholder="Their PIN (4–6 digits) — let them type it">
+ <button class="btn" data-act="addOther">Add to ladder</button></div></details>
  <div class="row" style="margin-top:14px"><a class="btn" href="#ladder">Cancel</a><button class="btn pri grow" data-act="startGame">${ui.finalOnly?"Save result":"Start live game"}</button></div></div>`;
 }
 function vMatch(){
@@ -377,7 +391,7 @@ function vHistory(){
 function vMe(){
  const p=isPlayer()?P(ME.pid):null;
  return`<div class="card"><h2>${p?esc(p.name):"Viewer"}</h2>${p?`<label class="lb">Usual faction</label><div class="row"><select id="me-fac" data-keep class="grow">${facOpts(p.faction)}</select><button class="btn pri" data-act="saveFac">Save</button></div>`:`<p class="muted small" style="margin-top:0">You're watching only. Switch to a player to start and score games.</p>`}
- <div class="row" style="margin-top:14px"><button class="btn" data-act="switch">${p?"Switch player / become viewer":"I'm playing — pick my name"}</button></div></div>
+ <div class="row" style="margin-top:14px"><button class="btn" data-act="switch">${p?"Log out":"I'm playing — log in"}</button></div></div>
  ${NATIVE?`<div class="card"><h2>Club server</h2><p class="small muted" style="margin-top:0">${esc(BASE)}</p><a class="btn" href="#connect">Change server</a><p class="small muted">App build ${APP_VERSION||"dev"}</p></div>`:""}`;
 }
 function vAdmin(){
@@ -388,7 +402,8 @@ function vAdmin(){
  <div class="row">${f("win","Win")}${f("draw","Draw")}${f("loss","Loss")}${f("play","Played")}${f("upset","Upset bonus")}${f("rounds","Battle rounds")}</div>
  <div class="row" style="margin-top:10px"><button class="btn pri" data-act="saveSettings">Save settings</button></div>
  <p class="small muted">Changing points recalculates the whole ladder from every game. Battle rounds applies to new games.</p></div>
- <div class="card"><h2>Players</h2><div class="tw"><table>${players().map(p=>{const n=S.games.filter(g=>inGame(g,p.id)).length;return`<tr><td><input id="pn-${p.id}" data-keep value="${esc(p.name)}" style="width:100%"></td><td class="n small muted">${n} games</td><td style="text-align:right;white-space:nowrap"><button class="btn sm" data-act="rename" data-v="${p.id}">Rename</button> ${n?"":`<button class="btn sm dan" data-confirm data-act="delPlayer" data-v="${p.id}">Delete</button>`}</td></tr>`}).join("")}</table></div>
+ <div class="card"><h2>Players</h2><div class="tw"><table>${players().map(p=>{const n=S.games.filter(g=>inGame(g,p.id)).length;return`<tr><td><input id="pn-${p.id}" data-keep value="${esc(p.name)}" style="width:100%"></td><td class="n small muted">${n} games</td><td style="text-align:right;white-space:nowrap"><button class="btn sm" data-act="rename" data-v="${p.id}">Rename</button> ${n?"":`<button class="btn sm dan" data-confirm data-act="delPlayer" data-v="${p.id}">Delete</button>`}</td></tr>
+ <tr><td colspan="3" style="border-bottom:1px solid var(--line)"><div class="row"><span class="small muted grow">${p.has_pin?"Has a PIN":"No PIN yet"}</span><input id="pr-${p.id}" type="password" inputmode="numeric" maxlength="6" placeholder="New PIN" style="width:110px"><button class="btn sm" data-act="resetPin" data-v="${p.id}">Reset PIN</button></div></td></tr>`}).join("")}</table></div>
  <p class="small muted">To fix or delete a result, open it from History.</p></div>
  <div class="card"><h2>Backup</h2>${NATIVE?`<p class="small muted" style="margin-top:0">Download backups from the web version on a computer, or copy <code>spearhead.db</code> from the Pi.</p>`:`<a class="btn" href="/api/export?key=${encodeURIComponent(ADMIN)}">Download backup (JSON)</a><p class="small muted">The whole league lives in <code>spearhead.db</code> on the Pi — copying that file is a full backup too.</p>`}</div>`;
 }
@@ -408,12 +423,19 @@ const A={
   catch(e){toast("Couldn't find a Spearhead server at that address")}},
  cancelConnect:()=>go("me"),
  getApp:()=>openExternal(BASE+"/download"),
- iam:v=>{setMe({role:"player",pid:v});go("ladder")},
+ iam:v=>go("login/"+v),
+ login:async v=>{const pin=val("li-pin").trim();if(!/^\d{4,6}$/.test(pin))return toast("PIN must be 4 to 6 digits");const j=await api("POST","/api/login",{pid:v,pin});setMe({role:"player",pid:v,token:j.token});toast("Welcome, "+pn(v),true);go("ladder")},
+ addOther:async()=>{const name=val("ap-name").trim(),pin=val("ap-pin").trim();if(!name)return toast("Enter their name");if(!/^\d{4,6}$/.test(pin))return toast("Their PIN must be 4 to 6 digits");
+  const j=await api("POST","/api/players",{name,faction:val("ap-fac"),pin});render();
+  const slot=[...document.querySelectorAll("select[id^='s-']")].find(e=>!e.value);if(slot){slot.value=j.new_id;const f=document.getElementById("f-"+slot.id.slice(2));if(f)f.value=val("ap-fac")||""}
+  toast(name+" added to the ladder",true)},
+ resetPin:async v=>{const pin=val("pr-"+v).trim();if(!/^\d{4,6}$/.test(pin))return toast("PIN must be 4 to 6 digits");await api("POST",`/api/players/${v}/reset-pin`,{pin});toast("PIN reset for "+pn(v),true);render()},
  viewer:()=>{setMe({role:"viewer"});go("ladder")},
  welcomeNew:()=>{ui.welcomeNew=true;render()},
  welcomeBack:()=>{ui.welcomeNew=false;render()},
- joinNew:async()=>{const name=val("wn-name").trim();if(!name)return toast("Enter your name");const j=await api("POST","/api/players",{name,faction:val("wn-fac")});setMe({role:"player",pid:j.new_id});ui.welcomeNew=false;go("ladder")},
- switch:()=>{ui.welcomeNew=false;go("welcome")},
+ joinNew:async()=>{const name=val("wn-name").trim(),pin=val("wn-pin").trim();if(!name)return toast("Enter your name");if(!/^\d{4,6}$/.test(pin))return toast("PIN must be 4 to 6 digits");if(pin!==val("wn-pin2").trim())return toast("The two PINs don't match");
+  const j=await api("POST","/api/players",{name,faction:val("wn-fac"),pin});setMe({role:"player",pid:j.new_id,token:j.token});ui.welcomeNew=false;go("ladder")},
+ switch:async()=>{if(ME&&ME.token){try{await fetch(BASE+"/api/logout",{method:"POST",headers:{"X-Player-Token":ME.token}})}catch(e){}}setMe(null);ui.welcomeNew=false;go("welcome")},
  saveFac:async()=>{await api("PATCH","/api/players/"+ME.pid,{faction:val("me-fac")});toast("Saved",true);go("ladder")},
  hist:v=>{ui.hist=v;render()},
  newMode:v=>{ui.newMode=v;render()},
