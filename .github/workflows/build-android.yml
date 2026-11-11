@@ -22,12 +22,14 @@ jobs:
         with:
           node-version: 22
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: android-actions/setup-android@v3
+      # GitHub's ubuntu runners already include the Android SDK (ANDROID_HOME); Gradle fetches anything else it needs.
+      - name: Check Android SDK
+        run: echo "ANDROID_HOME=$ANDROID_HOME" && ls "$ANDROID_HOME"
 
       - name: Install and prepare app
         working-directory: app
