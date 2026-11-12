@@ -74,15 +74,18 @@ tr.me td{background:rgba(210,169,79,.08)}
 .hero .crest{width:80px;height:80px}
 .hero h1{font-size:26px;margin-top:8px}
 .plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
-.live{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.side{border-radius:12px;padding:12px 8px;text-align:center;border:1px solid var(--line)}
+.live{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:380px){.ctr button{width:40px;height:40px;font-size:20px}.big{font-size:50px}}
+.pill{flex:none}
+.side{border-radius:12px;padding:10px 4px;min-width:0;text-align:center;border:1px solid var(--line)}
 .side.a{background:linear-gradient(180deg,#1d2a3d,var(--p))}.side.b{background:linear-gradient(180deg,#3d1d1f,var(--p))}
 .side .nm{font:700 15px Cinzel,serif}
 .big{font:800 60px Cinzel,serif;line-height:1;margin:8px 0 2px;color:var(--gold2)}
-.ctr{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0;flex-wrap:wrap}
-.ctr button{width:50px;height:50px;border-radius:50%;font:700 24px Inter,sans-serif;background:var(--p2);color:var(--tx);border:1px solid var(--line);cursor:pointer;touch-action:manipulation}
+.ctr{display:flex;align-items:center;justify-content:center;gap:6px;margin:6px 0 4px;flex-wrap:nowrap}
+.side .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
+.ctr button{width:46px;height:46px;flex:none;border-radius:50%;font:700 24px Inter,sans-serif;background:var(--p2);color:var(--tx);border:1px solid var(--line);cursor:pointer;touch-action:manipulation}
 .ctr button:active{background:var(--gold);color:#111}
-.ctr .v{font:700 24px Inter,sans-serif;min-width:34px}
+.ctr .v{font:700 24px Inter,sans-serif;min-width:28px}
 .ctr .l{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;width:100%}
 .cpp{font-size:12px;color:var(--mut);margin-top:6px}
 .cpp .ctr button{width:38px;height:38px;font-size:18px}.cpp .ctr .v{font-size:18px}
@@ -105,34 +108,34 @@ tr.me td{background:rgba(210,169,79,.08)}
 .aw span{font-size:12px;background:var(--p2);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
 .aw b{color:var(--gold2)}
 .awt td{padding:6px 4px}
-.arena{position:relative;height:150px;margin:0 0 12px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,#2a1f35 0%,#3b2a2f 55%,#4a3326 100%)}
+.arena{position:relative;height:66px;margin:0 0 10px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,#2a1f35 0%,#3b2a2f 55%,#4a3326 100%)}
 .arena .sky{position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,200,120,.25),transparent 40%),radial-gradient(circle at 15% 30%,rgba(140,120,255,.15),transparent 35%)}
-.arena .ground{position:absolute;left:0;right:0;bottom:0;height:28px;background:repeating-linear-gradient(90deg,#3a2a1e 0 8px,#33251a 8px 16px);border-top:3px solid #5a4330}
-.arena .ft{position:absolute;bottom:22px;display:flex;gap:2px;z-index:2;transition:transform .2s}
-.arena .ft.fl{left:14%}.arena .ft.fr{right:14%}
+.arena .ground{position:absolute;left:0;right:0;bottom:0;height:12px;background:repeating-linear-gradient(90deg,#3a2a1e 0 8px,#33251a 8px 16px);border-top:2px solid #5a4330}
+.arena .ft{position:absolute;bottom:10px;display:flex;gap:2px;z-index:2;transition:transform .2s}
+.arena .ft.fl{left:28%}.arena .ft.fr{right:28%}
 .arena .ft.fr .spr{transform:scaleX(-1)}
-.arena .spr{width:84px;height:84px;image-rendering:pixelated;image-rendering:crisp-edges;animation:bob 1s steps(2) infinite}
-.arena .spr.duo{width:64px;height:64px}
-.arena .vsx{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:800 18px Cinzel,serif;color:var(--gold2);text-shadow:0 2px 0 #000;letter-spacing:.1em}
+.arena .spr{width:44px;height:44px;image-rendering:pixelated;image-rendering:crisp-edges;animation:bob 1s steps(2) infinite}
+.arena .spr.duo{width:36px;height:36px}
+.arena .vsx{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font:800 12px Cinzel,serif;color:var(--gold2);text-shadow:0 2px 0 #000;letter-spacing:.1em}
 @keyframes bob{50%{transform:translateY(-3px)}}
 .arena .ft.fr .spr{animation-name:bobR}@keyframes bobR{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateY(-3px)}}
 .arena .ft.fl.atk{animation:lungeL .7s steps(6)}.arena .ft.fr.atk{animation:lungeR .7s steps(6)}
-@keyframes lungeL{0%{transform:none}35%{transform:translateX(70px) translateY(-14px)}55%{transform:translateX(80px)}100%{transform:none}}
-@keyframes lungeR{0%{transform:none}35%{transform:translateX(-70px) translateY(-14px)}55%{transform:translateX(-80px)}100%{transform:none}}
+@keyframes lungeL{0%{transform:none}35%{transform:translateX(30px) translateY(-6px)}55%{transform:translateX(36px)}100%{transform:none}}
+@keyframes lungeR{0%{transform:none}35%{transform:translateX(-30px) translateY(-6px)}55%{transform:translateX(-36px)}100%{transform:none}}
 .arena .ft.hit{animation:hit .5s steps(4)}@keyframes hit{0%,100%{filter:none}25%{filter:brightness(3) saturate(0)}50%{filter:none}75%{filter:brightness(2.5) sepia(1) hue-rotate(-30deg)}}
 .arena .ft.fl.hit{transform:translateX(-10px)}.arena .ft.fr.hit{transform:translateX(10px)}
-.arena .ft.fl.jab{transform:translateX(16px)}.arena .ft.fr.jab{transform:translateX(-16px)}
+.arena .ft.fl.jab{transform:translateX(8px)}.arena .ft.fr.jab{transform:translateX(-8px)}
 .arena .ft.block{filter:brightness(1.3)}
-.arena .ft.won .spr{animation:cheer .6s steps(2) infinite}@keyframes cheer{50%{transform:translateY(-12px)}}
-.arena .ft.fr.won .spr{animation-name:cheerR}@keyframes cheerR{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateY(-12px)}}
-.arena .ft.lost{transform:translateY(18px) rotate(90deg);filter:grayscale(.8) brightness(.7)}.arena .ft.fr.lost{transform:translateY(18px) rotate(-90deg)}
+.arena .ft.won .spr{animation:cheer .6s steps(2) infinite}@keyframes cheer{50%{transform:translateY(-6px)}}
+.arena .ft.fr.won .spr{animation-name:cheerR}@keyframes cheerR{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateY(-6px)}}
+.arena .ft.lost{transform:translateY(10px) rotate(90deg);filter:grayscale(.8) brightness(.7)}.arena .ft.fr.lost{transform:translateY(10px) rotate(-90deg)}
 .arena .ft.lost .spr{animation:none}
 .arena .fx{position:absolute;inset:0;pointer-events:none;z-index:3}
-.arena .pop{position:absolute;top:18%;font:800 18px Cinzel,serif;color:#ffe27a;text-shadow:0 2px 0 #000;animation:pop 1.2s ease-out forwards}
-.arena .pL{left:22%}.arena .pR{right:22%}
+.arena .pop{position:absolute;top:4%;font:800 12px Cinzel,serif;color:#ffe27a;text-shadow:0 2px 0 #000;animation:pop 1.2s ease-out forwards}
+.arena .pL{left:30%}.arena .pR{right:30%}
 @keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.6)}20%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-26px)}}
-.arena .slash{position:absolute;top:30%;width:60px;height:60px;background:linear-gradient(135deg,transparent 45%,#fff 48%,#ffe27a 50%,transparent 55%);animation:slash .45s steps(3) .2s both}
-.arena .sL{right:28%}.arena .sR{left:28%;transform:scaleX(-1)}
+.arena .slash{position:absolute;top:20%;width:30px;height:30px;background:linear-gradient(135deg,transparent 45%,#fff 48%,#ffe27a 50%,transparent 55%);animation:slash .45s steps(3) .2s both}
+.arena .sL{right:40%}.arena .sR{left:40%;transform:scaleX(-1)}
 @keyframes slash{0%{opacity:0;clip-path:inset(0 100% 0 0)}50%{opacity:1}100%{opacity:0;clip-path:inset(0 0 0 0)}}
 .steps{display:flex;gap:4px;margin:10px 0}.steps i{flex:1;height:5px;border-radius:3px;background:var(--p2)}.steps i.done{background:#7a6332}.steps i.on{background:var(--gold)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#3a2a2a;border:1px solid var(--red);padding:10px 16px;border-radius:10px;z-index:9;display:none;max-width:90vw}
@@ -390,7 +393,7 @@ function sideCard(g,s,edit){
  const t=totals(g),team=g.teams[s];
  return`<div class="side ${s?"b":"a"}"><div class="nm">${team.map(id=>esc(pn(id))).join("<br>")}</div><div class="fac">${team.map(id=>esc(gWb(g,id)||gFac(g,id))).filter(Boolean).join(" · ")}</div>
  <div class="big">${t[s]}</div><div class="small muted">total VP</div>
- <div class="ctr"><span class="l">Round ${g.round} VP</span>${edit?`<button data-act="vp" data-v="${s}:-1">−</button>`:""}<span class="v">${g.vp[g.round-1][s]}</span>${edit?`<button data-act="vp" data-v="${s}:1">+</button>`:""}</div></div>`;
+ <div class="l">Round ${g.round} VP</div><div class="ctr">${edit?`<button data-act="vp" data-v="${s}:-1">−</button>`:""}<span class="v">${g.vp[g.round-1][s]}</span>${edit?`<button data-act="vp" data-v="${s}:1">+</button>`:""}</div></div>`;
 }
 function awardTable(g){
  const aw=ladder().awards[g.id];
