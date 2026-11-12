@@ -228,10 +228,20 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()});
 function cmpRow(a,b){return b.pts-a.pts||(b.vf-b.va)-(a.vf-a.va)||b.w-a.w||a.name.localeCompare(b.name)}
 function ladder(){
  if(LCACHE&&LCACHE.rev===S.rev)return LCACHE;
- const st=S.settings,r={},awards={};
- S.players.forEach(p=>r[p.id]={id:p.id,name:p.name,fac:p.warband||p.faction,pts:0,gp:0,w:0,d:0,l:0,up:0,vf:0,va:0,g1:0,g2:0,form:[]});
+ const st=S.settings,r={},awards={},DAY=86400,NOW=S.server_time||Date.now()/1000;
+ // Inactivity: every idle_days without a game (counted from a player's last game), lose points by ladder position at that moment.
+ function applyIdle(until){
+  const D=(st.idle_days||0)*DAY;if(!D)return;until=Math.min(until,NOW);
+  for(;;){let who=null,at=1/0;Object.values(r).forEach(x=>{if(!x.last)return;const t=x.last+D*(x.idleN+1);if(t<at){at=t;who=x}});
+   if(!who||at>until)break;
+   const ranked=Object.values(r).filter(x=>x.gp>0).sort(cmpRow),pos=ranked.indexOf(who)+1;
+   const amt=pos<=3?st.idle_top:pos<=6?st.idle_mid:st.idle_low,lose=Math.min(amt||0,who.pts);
+   who.pts-=lose;who.idle+=lose;who.idleN++;}
+ }
+ S.players.forEach(p=>r[p.id]={id:p.id,name:p.name,fac:p.warband||p.faction,idle:0,idleN:0,last:0,pts:0,gp:0,w:0,d:0,l:0,up:0,vf:0,va:0,g1:0,g2:0,form:[]});
  S.games.filter(g=>g.status==="done"&&g.ladder!==false).sort((a,b)=>(a.finished||a.created)-(b.finished||b.created)).forEach(g=>{
   if(g.teams.flat().some(id=>!r[id]))return;
+  applyIdle(g.finished||g.created);
   const ranked=Object.values(r).filter(x=>x.gp>0).sort(cmpRow),pos={};ranked.forEach((x,i)=>pos[x.id]=i+1);
   const avg=t=>t.reduce((n,id)=>n+(pos[id]||ranked.length+1),0)/t.length;
   const pa=avg(g.teams[0]),pb=avg(g.teams[1]),s=res(g),t=totals(g);
@@ -244,7 +254,9 @@ function ladder(){
    const tot=parts.reduce((n,p)=>n+p[1],0);x.pts+=tot;x.gp++;g.mode==="2v2"?x.g2++:x.g1++;
    x.vf+=t[i];x.va+=t[1-i];awards[g.id][id]={tot,parts,upset:sc===1&&oppHigher};
   }));
+  g.teams.flat().forEach(id=>{r[id].last=g.finished||g.created;r[id].idleN=0});
  });
+ applyIdle(1/0);
  const rows=Object.values(r).sort((a,b)=>(b.gp>0)-(a.gp>0)||cmpRow(a,b));
  LCACHE={rev:S.rev,rows,awards,byId:r};return LCACHE;
 }
@@ -369,7 +381,7 @@ function vLogin(pid){
   <div class="row" style="margin-top:14px"><a class="btn" href="#welcome">Back</a><button class="btn pri grow" data-act="login" data-v="${p.id}">Log in</button></div>
   <p class="small muted">Not ${esc(p.name)}? Go back and pick your own name. Forgot your PIN? Ask the organiser to reset it.</p></div></main>`;
 }
-function pointsRule(){const s=S.settings;return`Win ${s.win} · Draw ${s.draw} · Loss ${s.loss}${s.play?` · +${s.play} for playing`:""}${s.upset?` · +${s.upset} upset bonus for beating someone ranked above you`:""}. 1v1 and 2v2 both count — in 2v2 each player on the team gets the points, and an upset is judged on the teams' average ladder position. Ties: VP difference, then wins.`}
+function pointsRule(){const s=S.settings;return`Win ${s.win} · Draw ${s.draw} · Loss ${s.loss}${s.play?` · +${s.play} for playing`:""}${s.upset?` · +${s.upset} upset bonus for beating someone ranked above you`:""}.${s.idle_days?` Not played for ${s.idle_days} days? Ranks 1–3 lose ${s.idle_top}, ranks 4–6 lose ${s.idle_mid}, everyone else ${s.idle_low} — and again every ${s.idle_days} days until they play (never below 0).`:""} 1v1 and 2v2 both count — in 2v2 each player on the team gets the points, and an upset is judged on the teams' average ladder position. Ties: VP difference, then wins.`}
 function vLadder(){
  const L=ladder(),rows=L.rows,me=isPlayer()?ME.pid:null,lv=liveGames();
  let sug="";
@@ -379,11 +391,16 @@ function vLadder(){
  const liveCard=lv.length?`<div class="card"><h2>Live now</h2>${lv.map(liveLine).join("")}</div>`:"";
  return`${liveCard}<div class="card"><h2>Ladder</h2>
  ${S.players.length?`<div class="tw"><table><tr><th>#</th><th>Player</th><th class="n">Pts</th><th class="n">GP</th><th class="n">W-D-L</th><th class="n">★</th><th class="n">VP±</th><th>Form</th>${me?"<th></th>":""}</tr>
- ${rows.map((x,i)=>`<tr class="r${x.gp?i+1:0} ${x.id===me?"me":""}"><td class="rank">${x.gp?i+1:"–"}</td><td><b>${esc(x.name)}</b><div class="fac">${esc(x.fac||"")}</div></td><td class="n pts">${x.pts}</td><td class="n" title="${x.g1} × 1v1, ${x.g2} × 2v2">${x.gp}${x.g2?`<div class="fac">${x.g2} × 2v2</div>`:""}</td><td class="n">${x.w}-${x.d}-${x.l}</td><td class="n">${x.up||""}</td><td class="n">${x.vf-x.va>0?"+":""}${x.vf-x.va}</td><td class="form">${x.form.slice(-5).map(f=>`<span class="${f}">${f}</span>`).join("")}</td>${me?`<td style="text-align:right">${x.id!==me?`<a class="btn sm pri" href="#new/${x.id}">Play</a>`:""}</td>`:""}</tr>`).join("")}
+ ${rows.map((x,i)=>`<tr class="r${x.gp?i+1:0} ${x.id===me?"me":""}"><td class="rank">${x.gp?i+1:"–"}</td><td><b>${esc(x.name)}</b><div class="fac">${esc(x.fac||"")}</div>${idleNote(x)}</td><td class="n pts">${x.pts}</td><td class="n" title="${x.g1} × 1v1, ${x.g2} × 2v2">${x.gp}${x.g2?`<div class="fac">${x.g2} × 2v2</div>`:""}</td><td class="n">${x.w}-${x.d}-${x.l}</td><td class="n">${x.up||""}</td><td class="n">${x.vf-x.va>0?"+":""}${x.vf-x.va}</td><td class="form">${x.form.slice(-5).map(f=>`<span class="${f}">${f}</span>`).join("")}</td>${me?`<td style="text-align:right">${x.id!==me?`<a class="btn sm pri" href="#new/${x.id}">Play</a>`:""}</td>`:""}</tr>`).join("")}
  </table></div><p class="small muted">${pointsRule()} ★ = upsets.</p>`:`<div class="empty">No players yet.</div>`}</div>
  ${sug}
  ${(()=>{const fs=factionStats();return fs.length?`<div class="card"><div class="row between" style="margin-bottom:6px"><h2 style="margin:0">Performance</h2><div class="seg"><button data-act="statBy" data-v="faction" class="${ui.statBy!=="warband"?"on":""}">Faction</button><button data-act="statBy" data-v="warband" class="${ui.statBy==="warband"?"on":""}">Warband</button></div></div><div class="tw"><table><tr><th>${ui.statBy==="warband"?"Warband":"Faction"}</th><th class="n">Games</th><th class="n">Win %</th><th style="width:35%"></th></tr>${fs.map(f=>{const p=Math.round((f.w+f.d/2)/f.g*100);return`<tr><td>${esc(f.n)}</td><td class="n">${f.g}</td><td class="n">${p}%</td><td><div class="bar"><i style="width:${p}%"></i></div></td></tr>`}).join("")}</table></div><p class="small muted">All finished games, 1v1 and 2v2. Draws count as half a win.</p></div>`:""})()}`;
 }
+function idleNote(x){
+ if(!x.last)return"";const st=S.settings,D=(st.idle_days||0)*86400,now=S.server_time||Date.now()/1000,days=Math.floor((now-x.last)/86400);
+ let h=`<div class="fac">Last game ${days<1?"today":days===1?"yesterday":days+" days ago"}${x.idle?` · <span style="color:var(--red)">−${x.idle} idle</span>`:""}</div>`;
+ if(D){const next=x.last+D*(x.idleN+1),left=Math.ceil((next-now)/86400);if(left<=4&&left>=0)h+=`<div class="fac" style="color:var(--gold2)">⏳ play within ${left} day${left===1?"":"s"} to avoid losing points</div>`}
+ return h}
 function liveLine(g){const t=totals(g);return`<a class="lg" href="#game/${g.id}"><div class="row between"><div><span class="pill live">LIVE</span> <span class="pill">${g.mode} · R${g.round}</span><div style="margin-top:4px"><b>${esc(tn(g.teams[0]))}</b> vs <b>${esc(tn(g.teams[1]))}</b></div></div><div class="score">${t[0]} – ${t[1]}</div></div></a>`}
 function vLive(){
  const lv=liveGames();
@@ -513,6 +530,7 @@ function vAdmin(){
  return`<div class="card"><div class="row between"><h2 style="margin:0">League settings</h2><button class="btn sm" data-act="admLogout">Lock admin</button></div>
  <div style="margin:10px 0">${f("club","Club / league name","text")}</div>
  <div class="row">${f("win","Win")}${f("draw","Draw")}${f("loss","Loss")}${f("play","Played")}${f("upset","Upset bonus")}${f("rounds","Battle rounds")}</div>
+ <h3>Inactivity penalty</h3><div class="row">${f("idle_days","Idle days (0 = off)")}${f("idle_top","Ranks 1–3 lose")}${f("idle_mid","Ranks 4–6 lose")}${f("idle_low","Others lose")}</div>
  <div class="row" style="margin-top:10px"><button class="btn pri" data-act="saveSettings">Save settings</button></div>
  <p class="small muted">Changing points recalculates the whole ladder from every game. Battle rounds applies to new games.</p></div>
  <div class="card"><h2>Players</h2><div class="tw"><table>${players().map(p=>{const n=S.games.filter(g=>inGame(g,p.id)).length;return`<tr><td><input id="pn-${p.id}" data-keep value="${esc(p.name)}" style="width:100%"></td><td class="n small muted">${n} games</td><td style="text-align:right;white-space:nowrap"><button class="btn sm" data-act="rename" data-v="${p.id}">Rename</button> ${n?"":`<button class="btn sm dan" data-confirm data-act="delPlayer" data-v="${p.id}">Delete</button>`}</td></tr>
@@ -590,7 +608,7 @@ const A={
   if(!r.configured){toast("No ADMIN_KEY is set on the server — see README");return}
   if(r.ok){isAdmin=true;ls.set(ADM_KEY,ADMIN);render()}else toast("Wrong admin key")},
  admLogout:()=>{isAdmin=false;ADMIN="";ls.set(ADM_KEY,"");render()},
- saveSettings:async()=>{const b={};["club","win","draw","loss","play","upset","rounds"].forEach(k=>b[k]=val("set-"+k));await api("POST","/api/settings",b);toast("Settings saved",true);render()},
+ saveSettings:async()=>{const b={};["club","win","draw","loss","play","upset","rounds","idle_days","idle_top","idle_mid","idle_low"].forEach(k=>b[k]=val("set-"+k));await api("POST","/api/settings",b);toast("Settings saved",true);render()},
  rename:async v=>{await api("PATCH","/api/players/"+v,{name:val("pn-"+v)});toast("Renamed",true);render()},
  delPlayer:async v=>{await api("DELETE","/api/players/"+v);render()},
  fixGame:async v=>{const g=S.games.find(x=>x.id===v);const vp=g.vp.map((_,i)=>[num(val(`fix-${i}-0`)),num(val(`fix-${i}-1`))]);await api("POST",`/api/games/${v}/fix`,{vp,ladder:document.getElementById("fix-ladder").checked});toast("Result updated",true);render()},

@@ -35,6 +35,7 @@ app/      Android app (Capacitor) — uses the same screens as server/static/ind
 
 - Upsets are judged on ladder positions just before the game. In 2v2 it uses each team's average position. Players with no games yet count as ranked below everyone, so a newcomer beating a ranked player earns the upset bonus.
 - Ladder order is points, then VP difference, then wins.
+- **Inactivity:** after 14 days without a game, ranks 1–3 lose 3 points, ranks 4–6 lose 2, everyone else 1, and again every 14 days until they play (never below 0; the clock only starts after a player's first game). The ladder shows each player's last game, any idle points lost, and a ⏳ warning in the last few days. All adjustable (or switch off with 0) in Admin.
 - Each finished game shows exactly what each player earned, e.g. "Win +3 · Played +1 · Upset +1".
 - Changing the points in Admin recalculates the whole ladder from every game.
 

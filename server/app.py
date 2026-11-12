@@ -22,8 +22,9 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("SPEARHEAD_DB", os.path.join(BASE, "spearhead.db"))
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
 DEFAULT_SETTINGS = {"club": "The Dirty d6 Dozen", "win": 3, "draw": 1, "loss": 0,
-                    "play": 1, "upset": 1, "rounds": 4, "extra_warbands": []}
-INT_SETTINGS = ("win", "draw", "loss", "play", "upset", "rounds")
+                    "play": 1, "upset": 1, "rounds": 4, "extra_warbands": [],
+                    "idle_days": 14, "idle_top": 3, "idle_mid": 2, "idle_low": 1}
+INT_SETTINGS = ("win", "draw", "loss", "play", "upset", "rounds", "idle_days", "idle_top", "idle_mid", "idle_low")
 DOWNLOADS = os.path.join(BASE, "static", "downloads")
 APK_NAME = "spearhead-league.apk"
 
