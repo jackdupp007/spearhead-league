@@ -22,7 +22,7 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get("SPEARHEAD_DB", os.path.join(BASE, "spearhead.db"))
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "")
 DEFAULT_SETTINGS = {"club": "The Dirty d6 Dozen", "win": 3, "draw": 1, "loss": 0,
-                    "play": 1, "upset": 1, "rounds": 4}
+                    "play": 1, "upset": 1, "rounds": 4, "extra_warbands": []}
 INT_SETTINGS = ("win", "draw", "loss", "play", "upset", "rounds")
 DOWNLOADS = os.path.join(BASE, "static", "downloads")
 APK_NAME = "spearhead-league.apk"
@@ -77,6 +77,8 @@ def init_db():
     cols = {r[1] for r in con.execute("PRAGMA table_info(players)")}
     if "pin_hash" not in cols:
         con.execute("ALTER TABLE players ADD COLUMN pin_hash TEXT DEFAULT ''")
+    if "warband" not in cols:
+        con.execute("ALTER TABLE players ADD COLUMN warband TEXT DEFAULT ''")
     con.execute("INSERT OR IGNORE INTO meta VALUES('rev','1')")
     con.execute("INSERT OR IGNORE INTO meta VALUES('settings',?)", (json.dumps(DEFAULT_SETTINGS),))
     con.commit()
@@ -117,7 +119,8 @@ def state():
     return {
         "rev": int(get_meta("rev")),
         "settings": settings(),
-        "players": [{"id": r["id"], "name": r["name"], "faction": r["faction"], "has_pin": bool(r["pin_hash"])}
+        "players": [{"id": r["id"], "name": r["name"], "faction": r["faction"], "warband": r["warband"] or "",
+                     "has_pin": bool(r["pin_hash"])}
                     for r in d.execute("SELECT * FROM players ORDER BY name COLLATE NOCASE")],
         "games": [game_out(r) for r in d.execute(
             "SELECT * FROM games WHERE status IN ('live','done') ORDER BY created")],
@@ -249,8 +252,8 @@ def add_player():
         if db().execute("SELECT 1 FROM players WHERE name=?", (name,)).fetchone():
             abort(409, "That name is already taken — pick it from the list instead")
         pid = uuid.uuid4().hex[:10]
-        db().execute("INSERT INTO players(id,name,faction,created,pin_hash) VALUES(?,?,?,?,?)",
-                     (pid, name, (b.get("faction") or "")[:60], time.time(), hash_pin(pin)))
+        db().execute("INSERT INTO players(id,name,faction,warband,created,pin_hash) VALUES(?,?,?,?,?,?)",
+                     (pid, name, (b.get("faction") or "")[:60], (b.get("warband") or "")[:80], time.time(), hash_pin(pin)))
         token = new_session(pid)
         return commit_and_state(new_id=pid, token=token)
 
@@ -306,10 +309,13 @@ def edit_player(pid):
     with WRITE_LOCK:
         if not db().execute("SELECT 1 FROM players WHERE id=?", (pid,)).fetchone():
             abort(404, "Player not found")
-        if "faction" in b:
+        if "faction" in b or "warband" in b:
             if not is_admin() and need_player() != pid:
-                abort(403, "You can only change your own faction")
-            db().execute("UPDATE players SET faction=? WHERE id=?", ((b["faction"] or "")[:60], pid))
+                abort(403, "You can only change your own warband")
+            if "faction" in b:
+                db().execute("UPDATE players SET faction=? WHERE id=?", ((b["faction"] or "")[:60], pid))
+            if "warband" in b:
+                db().execute("UPDATE players SET warband=? WHERE id=?", ((b["warband"] or "")[:80], pid))
         if "name" in b:
             need_admin()
             name = (b["name"] or "").strip()[:40]
@@ -324,14 +330,46 @@ def edit_player(pid):
 
 @app.delete("/api/players/<pid>")
 def del_player(pid):
-    need_admin()
+    if not is_admin() and need_player() != pid:
+        abort(403, "You can only delete your own account")
     with WRITE_LOCK:
         for r in db().execute("SELECT data FROM games"):
             d = json.loads(r["data"])
             if any(pid in t for t in d["teams"]):
-                abort(409, "Player has games — they can't be deleted")
+                abort(409, "This account has games on the ladder, so it can't be deleted. Ask the organiser to merge it into your other account.")
         db().execute("DELETE FROM players WHERE id=?", (pid,))
         db().execute("DELETE FROM sessions WHERE pid=?", (pid,))
+        return commit_and_state()
+
+
+@app.post("/api/players/<src>/merge")
+def merge_player(src):
+    """Admin: move every game from one account into another, then remove the first account."""
+    need_admin()
+    dst = body().get("into") or ""
+    if not dst or dst == src:
+        abort(400, "Pick a different account to merge into")
+    with WRITE_LOCK:
+        ids = {r["id"] for r in db().execute("SELECT id FROM players WHERE id IN (?,?)", (src, dst))}
+        if ids != {src, dst}:
+            abort(404, "Player not found")
+        rows = db().execute("SELECT id, data FROM games").fetchall()
+        for r in rows:
+            d = json.loads(r["data"])
+            flat = [p for t in d["teams"] for p in t]
+            if src in flat and dst in flat:
+                abort(409, "These two accounts played in the same game, so they can't be merged")
+        for r in rows:
+            d = json.loads(r["data"])
+            if not any(src in t for t in d["teams"]):
+                continue
+            d["teams"] = [[dst if p == src else p for p in t] for t in d["teams"]]
+            for k in ("factions", "warbands", "cp"):
+                if k in d and src in d[k]:
+                    d[k][dst] = d[k].pop(src)
+            db().execute("UPDATE games SET data=? WHERE id=?", (json.dumps(d), r["id"]))
+        db().execute("DELETE FROM players WHERE id=?", (src,))
+        db().execute("DELETE FROM sessions WHERE pid=?", (src,))
         return commit_and_state()
 
 
@@ -360,8 +398,10 @@ def new_game():
             abort(403, "You can only start games you're playing in")
         rounds = int(settings()["rounds"])
         factions = {p: str((b.get("factions") or {}).get(p) or "")[:60] for p in flat}
+        warbands = {p: str((b.get("warbands") or {}).get(p) or "")[:80] for p in flat}
         now = time.time()
-        data = {"teams": teams, "factions": factions, "round": 1,
+        data = {"teams": teams, "factions": factions, "warbands": warbands, "round": 1,
+                "setup": {"done": b.get("final") is not None},
                 "vp": [[0, 0] for _ in range(rounds)], "cp": {p: 0 for p in flat},
                 "ladder": bool(b.get("ladder", True)), "by": b.get("by") or "", "note": ""}
         status = "live"
@@ -427,6 +467,36 @@ def game_round(gid):
         if not 1 <= rnd <= len(d["vp"]):
             abort(400, "Bad round")
         d["round"] = rnd
+    return mutate_live(gid, f)
+
+
+SETUP_KEYS = {"rolloff": (0, 1), "attacker": (0, 1), "first_turn": (0, 1)}
+
+
+@app.post("/api/games/<gid>/setup")
+def game_setup(gid):
+    """Pre-battle sequence: roll-off winner, attacker, first turn, realm, checklist, per-round first turn."""
+    b = body()
+
+    def f(d):
+        st = d.setdefault("setup", {})
+        for k, allowed in SETUP_KEYS.items():
+            if k in b:
+                if b[k] is not None and b[k] not in allowed:
+                    abort(400, "Bad value for " + k)
+                st[k] = b[k]
+        if "realm" in b:
+            st["realm"] = str(b["realm"] or "")[:60]
+        if "step" in b:
+            st["step"] = max(0, min(20, int(b["step"])))
+        if "done" in b:
+            st["done"] = bool(b["done"])
+        if "round_first" in b:  # {"round": n, "side": 0|1|null}
+            rf = b["round_first"] or {}
+            rnd, side = int(rf.get("round", 0)), rf.get("side")
+            if not 1 <= rnd <= len(d["vp"]) or side not in (0, 1, None):
+                abort(400, "Bad first-turn value")
+            st.setdefault("firsts", {})[str(rnd)] = side
     return mutate_live(gid, f)
 
 
@@ -501,6 +571,12 @@ def save_settings():
     s["rounds"] = max(1, min(8, s["rounds"]))
     if "club" in b:
         s["club"] = str(b["club"])[:60]
+    if "extra_warbands" in b:
+        ew = b["extra_warbands"]
+        if not isinstance(ew, list):
+            abort(400, "Bad warband list")
+        s["extra_warbands"] = [{"faction": str(x.get("faction", ""))[:60], "name": str(x.get("name", ""))[:80]}
+                               for x in ew if isinstance(x, dict) and x.get("name")][:100]
     with WRITE_LOCK:
         db().execute("UPDATE meta SET value=? WHERE key='settings'", (json.dumps(s),))
         return commit_and_state()

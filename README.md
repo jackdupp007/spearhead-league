@@ -12,6 +12,10 @@ app/      Android app (Capacitor) — uses the same screens as server/static/ind
 
 - **First open:** the app connects to the club server, then the person either registers (name, faction and a 4–6 digit PIN), logs in by tapping their name and entering their PIN, or continues as a viewer.
 - **PINs:** only a logged-in player can start games and score them, and only games they're playing in. Five wrong PINs locks that name for 5 minutes. Forgot a PIN? Admin → Players → Reset PIN. Players created before PINs existed set their PIN the first time they log in.
+- **Warbands:** players pick their Spearhead warband (e.g. Fusil-Platoon, Crixxit's Kill-Pack) when they register, can change it any time on their profile, and can pick a different one for a single game on the New game screen. Each game records the warband and faction used; ladder points always stay with the player's name. Missing a new Spearhead? Admin → Extra warbands.
+- **Pre-battle setup:** every live game starts with the Spearhead pre-battle sequence step by step on both phones: roll-off winner, attacker/defender, regiment ability & enhancement, realm battlefield, map & territory, terrain, deployment, and who the attacker chose to go first. From round 2 you record who won priority. It all shows on the finished game.
+- **Pixel fighters:** each faction has its own little pixel character. They duel at the top of a live game, lunge when their side scores, and the loser keels over at the end.
+- **Two accounts?** A player with no games can delete their own account (Me → Delete my account). If both accounts have games, Admin → Merge accounts moves all the games into one name.
 - **Player without a phone?** On the New game screen, open "Add a player who isn't on the list", let them type their own PIN, and score the game for both sides on your phone.
 - **Starts on the Ladder:** one ladder for both 1v1 and 2v2. Tap **Play** next to anyone, or use **Suggested for you**.
 - **Live game:** both players tap VP +/− for each battle round. Scores sync between phones, and anyone can watch from the **Live** tab. Only the players in the game (or the admin) can change the score.

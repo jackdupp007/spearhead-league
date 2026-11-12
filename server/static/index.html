@@ -105,6 +105,36 @@ tr.me td{background:rgba(210,169,79,.08)}
 .aw span{font-size:12px;background:var(--p2);border:1px solid var(--line);border-radius:8px;padding:3px 8px}
 .aw b{color:var(--gold2)}
 .awt td{padding:6px 4px}
+.arena{position:relative;height:150px;margin:0 0 12px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(180deg,#2a1f35 0%,#3b2a2f 55%,#4a3326 100%)}
+.arena .sky{position:absolute;inset:0;background:radial-gradient(circle at 80% 20%,rgba(255,200,120,.25),transparent 40%),radial-gradient(circle at 15% 30%,rgba(140,120,255,.15),transparent 35%)}
+.arena .ground{position:absolute;left:0;right:0;bottom:0;height:28px;background:repeating-linear-gradient(90deg,#3a2a1e 0 8px,#33251a 8px 16px);border-top:3px solid #5a4330}
+.arena .ft{position:absolute;bottom:22px;display:flex;gap:2px;z-index:2;transition:transform .2s}
+.arena .ft.fl{left:14%}.arena .ft.fr{right:14%}
+.arena .ft.fr .spr{transform:scaleX(-1)}
+.arena .spr{width:84px;height:84px;image-rendering:pixelated;image-rendering:crisp-edges;animation:bob 1s steps(2) infinite}
+.arena .spr.duo{width:64px;height:64px}
+.arena .vsx{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:800 18px Cinzel,serif;color:var(--gold2);text-shadow:0 2px 0 #000;letter-spacing:.1em}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.arena .ft.fr .spr{animation-name:bobR}@keyframes bobR{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateY(-3px)}}
+.arena .ft.fl.atk{animation:lungeL .7s steps(6)}.arena .ft.fr.atk{animation:lungeR .7s steps(6)}
+@keyframes lungeL{0%{transform:none}35%{transform:translateX(70px) translateY(-14px)}55%{transform:translateX(80px)}100%{transform:none}}
+@keyframes lungeR{0%{transform:none}35%{transform:translateX(-70px) translateY(-14px)}55%{transform:translateX(-80px)}100%{transform:none}}
+.arena .ft.hit{animation:hit .5s steps(4)}@keyframes hit{0%,100%{filter:none}25%{filter:brightness(3) saturate(0)}50%{filter:none}75%{filter:brightness(2.5) sepia(1) hue-rotate(-30deg)}}
+.arena .ft.fl.hit{transform:translateX(-10px)}.arena .ft.fr.hit{transform:translateX(10px)}
+.arena .ft.fl.jab{transform:translateX(16px)}.arena .ft.fr.jab{transform:translateX(-16px)}
+.arena .ft.block{filter:brightness(1.3)}
+.arena .ft.won .spr{animation:cheer .6s steps(2) infinite}@keyframes cheer{50%{transform:translateY(-12px)}}
+.arena .ft.fr.won .spr{animation-name:cheerR}@keyframes cheerR{0%,100%{transform:scaleX(-1)}50%{transform:scaleX(-1) translateY(-12px)}}
+.arena .ft.lost{transform:translateY(18px) rotate(90deg);filter:grayscale(.8) brightness(.7)}.arena .ft.fr.lost{transform:translateY(18px) rotate(-90deg)}
+.arena .ft.lost .spr{animation:none}
+.arena .fx{position:absolute;inset:0;pointer-events:none;z-index:3}
+.arena .pop{position:absolute;top:18%;font:800 18px Cinzel,serif;color:#ffe27a;text-shadow:0 2px 0 #000;animation:pop 1.2s ease-out forwards}
+.arena .pL{left:22%}.arena .pR{right:22%}
+@keyframes pop{0%{opacity:0;transform:translateY(10px) scale(.6)}20%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-26px)}}
+.arena .slash{position:absolute;top:30%;width:60px;height:60px;background:linear-gradient(135deg,transparent 45%,#fff 48%,#ffe27a 50%,transparent 55%);animation:slash .45s steps(3) .2s both}
+.arena .sL{right:28%}.arena .sR{left:28%;transform:scaleX(-1)}
+@keyframes slash{0%{opacity:0;clip-path:inset(0 100% 0 0)}50%{opacity:1}100%{opacity:0;clip-path:inset(0 0 0 0)}}
+.steps{display:flex;gap:4px;margin:10px 0}.steps i{flex:1;height:5px;border-radius:3px;background:var(--p2)}.steps i.done{background:#7a6332}.steps i.on{background:var(--gold)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#3a2a2a;border:1px solid var(--red);padding:10px 16px;border-radius:10px;z-index:9;display:none;max-width:90vw}
 footer{text-align:center;padding:20px;font-size:12px}
 footer a{color:var(--mut);margin:0 8px}
@@ -122,6 +152,12 @@ const FACTIONS={
  Death:["Flesh-eater Courts","Nighthaunt","Ossiarch Bonereapers","Soulblight Gravelords"],
  Destruction:["Gloomspite Gitz","Ironjawz","Kruleboyz","Ogor Mawtribes","Sons of Behemat"]};
 const ALLF=Object.values(FACTIONS).flat();
+const SPRITES={"knight":["......oooo......",".....oaaaao.....","....oaccccao....","....oaeoeoao....","....oaaaaaao..w.",".....oaccao...w.","...oobaaaaboo.w.","..obbbaccaabbow.","..obcboaaoabbsw.","..obbboaaoaoosw.","...oboaaaaao.ow.",".....oaaaaao....",".....oao.oao....",".....oao.oao....","....ooao.oaoo...","....oooo.oooo..."],"duardin":["................","................",".....oooooo.....","....occcccco....","....oaaaaaao.ww.","....oseoseso.www","....osssssso..w.","...ohhhhhhhho.w.","..oahhhhhhhhaow.","..oashhhhhhsaow.","..oaahhhhhhaao..","...ocaaaaaaco...","....oaaaaaao....","....oao..oao....","...ooao..oaoo...","...oooo..oooo..."],"aelf":[".......w........","......www.......",".....ohhho..w...","....ohhhhho.w...","....ohssesh.w...","....ohsssso.w...",".....ossso..w...","....oaaaaao.w...","...oacaaacaoso..","...oaoaaaoaoso..","...osoaaaoo.w...",".....obbbbo.w...",".....obbbbo.....",".....ob..bo.....",".....oa..ao.....","....ooo..ooo...."],"lizard":["................","....ccc.........","...occco........","..oaaaaaoo......","..oaeaaaaao.....","..oaaaaoooo..w..","...oaaaaao..ww..","....obbbbbo.w...","...oabbbbbaow...","...oaobbbboaw...","...oaobbbbo.....","....oaaaaao.....","...oaao.oaaoooo.","...oao...oaaaaao","..ooao...oaooooo","..oooo...oooo..."],"rat":["................","...oo...........","..ocao.oo.......","..oaaaoaco......","...oaaaaao......","...oaeaaaaoo....","....oaaaaaaao...","....obbbboo.ww..","...obbbbbbo.w...","..oaobbbbbaow...","..oa.obbbbo.w...",".....oaaaao.....",".....oao.oao....","..o..oao..oao...","..oaaoao..oao...","...oooo..oooo..."],"tree":["..o..o...o......","..ao.ao.oa..o...","...aoaaoa..oa...","..ohhhhhhhoa....",".ohhhhhhhhho....",".ohheohheohho...","..ohhhhhhhho....","...oaaaaaao.....","..oaaabaaaaoo...",".oaoaaabaaoaao..",".oo.oaaaaao.oao.","....oaaabao..o..","....oaaoaao.....","...oaao.oaao....","..oaao...oaao...","..ooo.....ooo..."],"skeleton":["................",".....oooooo.....","....oaaaaaao....","....oaeoaeao....","....oaaaaaao....",".....oaoaoo..w..","......oaao...w..","....oobbbboo.w..","...oaobaaboaow..","...oaobbbbo.ow..","...oa.oaao..ow..",".....oooooo.....",".....oao.oao....",".....oao.oao....",".....oao.oao....","....oooo.oooo..."],"ghost":["...........w....","......oooo.ww...",".....ohhhho.w...","....ohoeoeho.w..","....ohhhhhho.w..","....ohhoohho.w..","...oaaaaaaaao.w.","..oaaaaaaaaaaow.","..oaoaaaaaaoaow.","...o.oaaaaao..w.",".....oaaaaao....",".....oaaaaaao...","......oaaaaaao..",".......oaa.aao..","........oa..ao..",".........o...o.."],"ghoul":["................","................","................","......oooo......",".....oaaaao.....",".....oeaeao.....",".....oaooao.....","....ooaaaaooo...","...oaabbbbaaso..","..oaoabbbbo.sso.","..oso.abbbo..o..","...o..oaaao.....",".....oao.oao....","....oao...oao...","...ooao...oaoo..","...oooo...oooo.."],"brute":[".co........oc...",".coo.oooo.ooc...","..ccoaaaaocc....","....oaeaeao.....","....oaaaaao..ww.",".....oaooo..www.","...oobbbbboo.w..","..oabbbcbbbaow..","..oaobbbbbbaow..","..osobbbbboosw..","...o.oaaaaao.w..",".....oaaaaao....",".....oao.oao....",".....oao.oao....","....ooao.oaoo...","....oooo.oooo..."],"bird":["....oco.........","...occcoo.......","...oaaaaao...e..","..oaaeaaacco.w..","..oaaaaaooo..w..","...oaaaao....w..","...obbbbbo...w..","..obbcbbbbo..w..","..obbbcbbbbsow..","..oboobbbboo.w..","...o.obbbbbo.w..",".....obbbbbbo...",".....oaobbbbo...",".....oao.oao....","....ooao.oaoo...","....oooo.oooo..."],"plague":["................","......ooo.......",".....occco......",".....oaeao......","....oaaaaao..w..","...oobbbbboo.w..","..obbbbbbbbbow..",".obbbbbbbbbbbo..",".obbbcbbbbcbbo..",".obbbbbbbbbbbo..",".obbbbbcbbbbbo..","..obbbbbbbbbo...","...oooaaaooo....","....oao.oao.....","...ooao.oaoo....","...oooo.oooo...."],"orc":["................",".....oooooo.....","....occcccco....","...oaaaaaaaao...","...oaeaaaaeao.w.","...oaaaaaaaaowww","...ocaoooocao.w.","..oobbbbbbbboow.",".oabbbbbbbbbbaow",".oaobbbcbbbboaow",".oaobbbbbbbboo..","..o.oaaaaaao....","....oaao.oaao...","....oaao.oaao...","...ooaao.oaaoo..","...ooooo.ooooo.."],"goblin":["................","................","......oooo......",".....obbbbo.....","....obbbbbbo....","...obbbbbbbbo...","...obaeaaeabo...","...oaaaaaaaaoo..","....oaaoooaao.w.",".....obbbbbo..w.","....oabbbbbaow..","....oaobbbboow..","......obbbo.....",".....oao.oao....","....ooao.oaoo...","....oooo.oooo..."],"ogre":["................","......oooo......",".....oaaaao.....",".....oeaaeo.....","....ooaooaoo....","..oooaaaaaaooo..",".oaaobbbbbboaao.",".oaoaaaaaaaaoaow",".oaoaaaaaaaaoaow",".oaoaaacccaaoaow",".osoaaaaaaaaosww","...oaaaaaaaao.ww","....obbbbbbo....","....oaao.oao....","...ooaao.oaoo...","...ooooo.oooo..."]};
+const PALS={"Stormcast Eternals":["knight",{"a":"#d9a93a","b":"#2f5fa8","c":"#f6e08a","s":"#e7c59a","e":"#7fd7ff","w":"#d8dde6","h":"#d9a93a"}],"Cities of Sigmar":["knight",{"a":"#8a95a5","b":"#8e2b2b","c":"#e2c35a","s":"#e7c59a","e":"#1b1b1b","w":"#c9ced6","h":"#5a3b25"}],"Fyreslayers":["duardin",{"a":"#c9772b","b":"#c9772b","c":"#f2c14e","s":"#e2a273","e":"#1b1b1b","w":"#f2c14e","h":"#e8641c"}],"Kharadron Overlords":["duardin",{"a":"#4d6b80","b":"#4d6b80","c":"#d6a640","s":"#e2a273","e":"#9fe3ff","w":"#9aa3ad","h":"#e8e4dc"}],"Helsmiths of Hashut":["duardin",{"a":"#3b2f2f","b":"#3b2f2f","c":"#c4492b","s":"#9c6a55","e":"#ff6a2a","w":"#9a8f86","h":"#1f1a1a"}],"Lumineth Realm-lords":["aelf",{"a":"#eef0f4","b":"#c8a24a","c":"#4ec3d6","s":"#f0d7c0","e":"#1b1b1b","w":"#e8eef6","h":"#f3e7b5"}],"Daughters of Khaine":["aelf",{"a":"#5a1d2b","b":"#2a2229","c":"#d7b25a","s":"#f0d7c0","e":"#1b1b1b","w":"#d0d4da","h":"#9e1b28"}],"Idoneth Deepkin":["aelf",{"a":"#2c8a8c","b":"#1d4f6b","c":"#c2e6dd","s":"#d9e2e8","e":"#1b1b1b","w":"#c2e6dd","h":"#e9f2f4"}],"Hedonites of Slaanesh":["aelf",{"a":"#8a3f9e","b":"#e2a3d8","c":"#f2d36b","s":"#c9a1d6","e":"#1b1b1b","w":"#d8d0e6","h":"#f4f0f8"}],"Seraphon":["lizard",{"a":"#3f8f6a","b":"#d6a640","c":"#d43d3d","s":"#3f8f6a","e":"#ffdd33","w":"#c9ced6","h":"#3f8f6a"}],"Skaven":["rat",{"a":"#7a6455","b":"#4d5a3a","c":"#e6a5a5","s":"#7a6455","e":"#7dff4a","w":"#9aa3ad","h":"#7a6455"}],"Sylvaneth":["tree",{"a":"#7a5a3a","b":"#5c4228","c":"#7fbf4d","s":"#7a5a3a","e":"#b6ff5a","w":"#7a5a3a","h":"#5f9e3e"}],"Soulblight Gravelords":["skeleton",{"a":"#e6dfc8","b":"#6e1a2a","c":"#c8b06a","s":"#e6dfc8","e":"#ff3b3b","w":"#a9aeb6","h":"#e6dfc8"}],"Ossiarch Bonereapers":["skeleton",{"a":"#efe6cf","b":"#3d3a52","c":"#9b6dd1","s":"#efe6cf","e":"#a87bff","w":"#cfc6b0","h":"#efe6cf"}],"Nighthaunt":["ghost",{"a":"#7fe3c8","b":"#5cc1a8","c":"#d6fff4","s":"#7fe3c8","e":"#ffffff","w":"#b7c2c9","h":"#3e5a5a"}],"Flesh-eater Courts":["ghoul",{"a":"#c9b9a6","b":"#6b2230","c":"#d6a640","s":"#c9b9a6","e":"#ff3b3b","w":"#c9b9a6","h":"#c9b9a6"}],"Blades of Khorne":["brute",{"a":"#a51f1f","b":"#4a3b36","c":"#d9c08a","s":"#e2a273","e":"#ffde59","w":"#a9aeb6","h":"#a51f1f"}],"Slaves to Darkness":["brute",{"a":"#3b3f4a","b":"#262a33","c":"#c9b77a","s":"#e2a273","e":"#ff5a5a","w":"#a9aeb6","h":"#3b3f4a"}],"Disciples of Tzeentch":["bird",{"a":"#3f6fd6","b":"#e3b23c","c":"#4ed6e8","s":"#3f6fd6","e":"#ff59e6","w":"#e3b23c","h":"#3f6fd6"}],"Maggotkin of Nurgle":["plague",{"a":"#8fa25a","b":"#6f7d3e","c":"#c9b867","s":"#8fa25a","e":"#ffd84a","w":"#7a6f5a","h":"#8fa25a"}],"Ironjawz":["orc",{"a":"#4f8a3a","b":"#c8a32a","c":"#a9aeb6","s":"#4f8a3a","e":"#ff4a4a","w":"#a9aeb6","h":"#4f8a3a"}],"Kruleboyz":["orc",{"a":"#5e8f4e","b":"#3a3f2a","c":"#3b3b3b","s":"#5e8f4e","e":"#ffdf4a","w":"#8a8f96","h":"#5e8f4e"}],"Gloomspite Gitz":["goblin",{"a":"#7cae4c","b":"#2d2a33","c":"#d9c24a","s":"#7cae4c","e":"#ff3b3b","w":"#a9aeb6","h":"#2d2a33"}],"Ogor Mawtribes":["ogre",{"a":"#d9a27a","b":"#5a3a2a","c":"#c9c9c9","s":"#d9a27a","e":"#1b1b1b","w":"#a9aeb6","h":"#d9a27a"}],"Sons of Behemat":["ogre",{"a":"#c98a6a","b":"#6b5a3a","c":"#7a5a3a","s":"#c98a6a","e":"#1b1b1b","w":"#7a5a3a","h":"#c98a6a"}]};
+const WARBANDS={"Cities of Sigmar":["Castelite Company","Fusil-Platoon","Sentinels of Embergard","Zenestra's Zealots"],"Daughters of Khaine":["Heartflayer Troupe","Khainite Shadow Coven"],"Fyreslayers":["Saga Axeband"],"Idoneth Deepkin":["Akhelian Tide Guard","Soulraid Hunt"],"Kharadron Overlords":["Grundstok Trailblazers","Skyhammer Task Force"],"Lumineth Realm-lords":["Glittering Phalanx","Hurakan Vanguard"],"Seraphon":["Starscale Warhost","Sunblooded Prowlers"],"Stormcast Eternals":["Vigilant Brotherhood","Yndrasta's Spearhead"],"Sylvaneth":["Bitterbark Copse","Spitewing Flight"],"Blades of Khorne":["Bloodbound Gore Pilgrims","Fangs of the Blood God"],"Disciples of Tzeentch":["Fluxblade Coven","Tzaangor Warflock"],"Hedonites of Slaanesh":["Blades of the Lurid Dream","Epicurean Revellers"],"Helsmiths of Hashut":["Helforge Host"],"Maggotkin of Nurgle":["Bleak Host","Bubonic Cell"],"Skaven":["Crixxit's Kill-Pack","Gnawfeast Clawpack","Warpspark Clawpack"],"Slaves to Darkness":["Bloodwind Legion","Darkoath Raiders"],"Flesh-eater Courts":["Carrion Retainers","Charnel Watch"],"Nighthaunt":["Cursed Shacklehorde","Slasher Host"],"Ossiarch Bonereapers":["Kavalos Vanguard","Mortisan Elite","Tithe-Reaper Echelon"],"Soulblight Gravelords":["Bloodcrave Hunt","Deathrattle Tomb Host"],"Gloomspite Gitz":["Bad Moon Madmob","Snarlpack Huntaz"],"Ironjawz":["Ironjawz Bigmob"],"Kruleboyz":["Swampskulka Gang"],"Ogor Mawtribes":["Scrapglutt","Tyrant's Bellow"],"Sons of Behemat":["Wallsmasher Stomp"]};
+function allWarbands(){const m={};ALLF.forEach(f=>m[f]=(WARBANDS[f]||[]).slice());((S&&S.settings.extra_warbands)||[]).forEach(x=>{(m[x.faction]=m[x.faction]||[]);if(!m[x.faction].includes(x.name))m[x.faction].push(x.name)});return m}
+function facOf(wb){if(!wb)return"";const m=allWarbands();for(const f in m)if(m[f].includes(wb))return f;return""}
+const wbLabel=(wb,fac)=>wb?(wb+(facOf(wb)||fac?` · ${facOf(wb)||fac}`:"")):(fac||"");
 const ID_KEY="spearhead-identity",ADM_KEY="spearhead-admin",HERE_KEY="spearhead-here",SRV_KEY="spearhead-server";
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
 const CAP=window.Capacitor,NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
@@ -149,6 +185,10 @@ const canScore=g=>isAdmin||(isPlayer()&&inGame(g,ME.pid));
 const liveGames=()=>S.games.filter(g=>g.status==="live");
 const doneGames=()=>S.games.filter(g=>g.status==="done").sort((a,b)=>(b.finished||b.created)-(a.finished||a.created));
 const facOpts=sel=>`<option value="">— faction —</option>`+Object.entries(FACTIONS).map(([g,l])=>`<optgroup label="${g}">${l.map(f=>`<option ${f===sel?"selected":""}>${esc(f)}</option>`).join("")}</optgroup>`).join("")+(sel&&!ALLF.includes(sel)?`<option selected>${esc(sel)}</option>`:"");
+const wbOpts=sel=>{const m=allWarbands();let found=false;const h=`<option value="">— warband —</option>`+Object.entries(FACTIONS).map(([g,l])=>l.filter(f=>m[f]&&m[f].length).map(f=>`<optgroup label="${esc(f)} (${g})">${m[f].map(w=>{if(w===sel)found=true;return`<option ${w===sel?"selected":""}>${esc(w)}</option>`}).join("")}</optgroup>`).join("")).join("");return h+(sel&&!found?`<option selected>${esc(sel)}</option>`:"")};
+const pWb=id=>{const p=P(id);return p?(p.warband||""):""};
+const gWb=(g,id)=>(g.warbands&&g.warbands[id])||"";
+const gFac=(g,id)=>(g.factions&&g.factions[id])||facOf(gWb(g,id));
 const plOpts=sel=>`<option value="">— player —</option>`+players().map(p=>`<option value="${p.id}" ${p.id===sel?"selected":""}>${esc(p.name)}</option>`).join("");
 function openExternal(url){if(NATIVE&&PLUG.Browser)PLUG.Browser.open({url});else window.open(url,"_blank")}
 
@@ -186,7 +226,7 @@ function cmpRow(a,b){return b.pts-a.pts||(b.vf-b.va)-(a.vf-a.va)||b.w-a.w||a.nam
 function ladder(){
  if(LCACHE&&LCACHE.rev===S.rev)return LCACHE;
  const st=S.settings,r={},awards={};
- S.players.forEach(p=>r[p.id]={id:p.id,name:p.name,fac:p.faction,pts:0,gp:0,w:0,d:0,l:0,up:0,vf:0,va:0,g1:0,g2:0,form:[]});
+ S.players.forEach(p=>r[p.id]={id:p.id,name:p.name,fac:p.warband||p.faction,pts:0,gp:0,w:0,d:0,l:0,up:0,vf:0,va:0,g1:0,g2:0,form:[]});
  S.games.filter(g=>g.status==="done"&&g.ladder!==false).sort((a,b)=>(a.finished||a.created)-(b.finished||b.created)).forEach(g=>{
   if(g.teams.flat().some(id=>!r[id]))return;
   const ranked=Object.values(r).filter(x=>x.gp>0).sort(cmpRow),pos={};ranked.forEach((x,i)=>pos[x.id]=i+1);
@@ -206,7 +246,7 @@ function ladder(){
  LCACHE={rev:S.rev,rows,awards,byId:r};return LCACHE;
 }
 function recentOpps(pid,n){return doneGames().filter(g=>inGame(g,pid)).slice(0,n).flatMap(g=>g.teams.find(t=>!t.includes(pid)))}
-function factionStats(){const f={};S.games.filter(g=>g.status==="done").forEach(g=>{const s=res(g);g.teams.forEach((t,i)=>t.forEach(pid=>{const n=g.factions[pid];if(!n)return;f[n]=f[n]||{n,g:0,w:0,d:0};f[n].g++;const sc=i?1-s:s;if(sc===1)f[n].w++;if(sc===.5)f[n].d++}))});return Object.values(f).sort((a,b)=>b.g-a.g)}
+function factionStats(){const f={};S.games.filter(g=>g.status==="done").forEach(g=>{const s=res(g);g.teams.forEach((t,i)=>t.forEach(pid=>{const n=ui.statBy==="warband"?gWb(g,pid):gFac(g,pid);if(!n)return;f[n]=f[n]||{n,g:0,w:0,d:0};f[n].g++;const sc=i?1-s:s;if(sc===1)f[n].w++;if(sc===.5)f[n].d++}))});return Object.values(f).sort((a,b)=>b.g-a.g)}
 
 /* ---------- match-up suggestions (points-based) ---------- */
 function pairCost(a,b,L,recent){let c=Math.abs(L[a].pts-L[b].pts);if((recent[a]||[]).includes(b))c+=10;return c}
@@ -228,6 +268,38 @@ function suggest2v2(ids){
  while(o.length>=4){const g=o.splice(0,4);const splits=[[[g[0],g[3]],[g[1],g[2]]],[[g[0],g[2]],[g[1],g[3]]],[[g[0],g[1]],[g[2],g[3]]]];
   let best=null,bd=1e9;splits.forEach(s=>{const d=Math.abs(s[0].reduce((n,x)=>n+L[x].pts,0)-s[1].reduce((n,x)=>n+L[x].pts,0));if(d<bd){bd=d;best=s}});games.push(best)}
  return{games,out:o};
+}
+
+/* ---------- pixel fighters ---------- */
+const SPR_CACHE={};
+function spriteURL(fac){
+ const key=fac||"?";if(SPR_CACHE[key])return SPR_CACHE[key];
+ const [arch,pal]=PALS[fac]||["knight",{a:"#8b8794",b:"#5a5664",c:"#c9c4d4",s:"#d8c2a8",e:"#ffffff",w:"#c9ced6",h:"#8b8794"}];
+ const c=document.createElement("canvas");c.width=16;c.height=16;const x=c.getContext("2d");
+ SPRITES[arch].forEach((row,yy)=>[...row].forEach((ch,xx)=>{if(ch===".")return;x.fillStyle=ch==="o"?"#141016":(pal[ch]||"#f0f");x.fillRect(xx,yy,1,1)}));
+ return SPR_CACHE[key]=c.toDataURL();
+}
+function arena(g){
+ const t=totals(g),done=g.status==="done",w=done?(t[0]>t[1]?0:t[1]>t[0]?1:null):null;
+ const side=s=>`<div class="ft ${s?"fr":"fl"} ${done&&w!=null?(w===s?"won":"lost"):""}" id="ft${s}">${g.teams[s].map((id,i)=>`<img class="spr ${g.teams[s].length>1?"duo":""}" style="animation-delay:${(i*0.35+s*0.2).toFixed(2)}s" src="${spriteURL(gFac(g,id))}" alt="">`).join("")}</div>`;
+ return`<div class="arena"><div class="sky"></div>${side(0)}<div class="vsx">${done?(w==null?"DRAW":"VICTORY"):"VS"}</div>${side(1)}<div class="fx" id="fx"></div><div class="ground"></div></div>`;
+}
+function battleFx(s,amt){
+ const a=document.getElementById("ft"+s),b=document.getElementById("ft"+(1-s)),fx=document.getElementById("fx");if(!a||!b)return;
+ a.classList.remove("atk");b.classList.remove("hit");void a.offsetWidth;a.classList.add("atk");setTimeout(()=>b.classList.add("hit"),220);
+ if(fx){const f=document.createElement("div");f.className="pop "+(s?"pR":"pL");f.textContent=(amt>0?"+":"")+amt+" VP";fx.appendChild(f);
+  const sl=document.createElement("div");sl.className="slash "+(s?"sR":"sL");fx.appendChild(sl);setTimeout(()=>{f.remove();sl.remove()},1300)}
+ setTimeout(()=>{a.classList.remove("atk");b.classList.remove("hit")},900);
+}
+let skirmishT=null;
+function ambient(){clearTimeout(skirmishT);const{v}=route();if(v!=="game")return;
+ skirmishT=setTimeout(()=>{const a=document.getElementById("ft0");if(a&&!document.querySelector(".arena .won")){const s=Math.random()<.5?0:1;const x=document.getElementById("ft"+s),y=document.getElementById("ft"+(1-s));
+  x.classList.add("jab");y.classList.add("block");setTimeout(()=>{x.classList.remove("jab");y.classList.remove("block")},600)}ambient()},3500+Math.random()*4000)}
+function afterRender(){
+ const{v,a}=route();if(v!=="game"){ui.prevT=null;return}
+ const g=S.games.find(x=>x.id===a);if(!g)return;const t=totals(g),k=g.id;
+ if(ui.prevT&&ui.prevT.id===k){[0,1].forEach(s=>{const d=t[s]-ui.prevT.t[s];if(d>0)setTimeout(()=>battleFx(s,d),50)})}
+ ui.prevT={id:k,t};ambient();
 }
 
 /* ---------- render ---------- */
@@ -253,7 +325,7 @@ function render(){
   ${offline?`<div class="offline">Can't reach the club server — retrying…</div>`:""}
   <main>${updateBanner()}${myLiveBanner(v,a)}${body}</main><footer>${!NATIVE&&appInfo&&appInfo.apk?`<a href="/download">📱 Get the Android app</a>`:""}<a href="#admin">Admin</a></footer>`;
  Object.entries(keep).forEach(([id,val])=>{const e=document.getElementById(id);if(e){if(e.type==="checkbox")e.checked=val;else e.value=val}});
- window.scrollTo(0,y);
+ window.scrollTo(0,y);afterRender();
 }
 function updateBanner(){
  if(!NATIVE||!appInfo||!appInfo.apk||!(appInfo.version>APP_VERSION))return"";
@@ -275,12 +347,13 @@ function vWelcome(){
  const getApp=!NATIVE&&appInfo&&appInfo.apk?`<div class="card"><h2>📱 Android app</h2><p class="small muted" style="margin-top:0">Install the club app on your phone to score your games.</p><a class="btn pri big" style="text-align:center" href="/download">Download the app</a><p class="small muted">After downloading, open the file and allow your browser to install apps if Android asks.</p></div>`:"";
  if(ui.welcomeNew)return`<div class="hero">${CREST}<h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League</div></div><main><div class="card"><h2>New player</h2>
   <label class="lb">Your name</label><input id="wn-name" data-keep style="width:100%" placeholder="Name the club knows you by">
-  <label class="lb" style="margin-top:10px">Usual faction</label><select id="wn-fac" data-keep style="width:100%">${facOpts("")}</select>
+  <label class="lb" style="margin-top:10px">Your Spearhead warband</label><select id="wn-wb" data-keep style="width:100%">${wbOpts("")}</select>
+  <p class="small muted" style="margin:4px 0 0">You can change it any time, or pick a different one when you start a game. One account per person — your ladder points stay with your name.</p>
   <div class="row" style="margin-top:10px"><div class="grow"><label class="lb">Choose a PIN (4–6 digits)</label><input id="wn-pin" data-keep type="password" inputmode="numeric" maxlength="6" style="width:100%"></div><div class="grow"><label class="lb">PIN again</label><input id="wn-pin2" data-keep type="password" inputmode="numeric" maxlength="6" style="width:100%"></div></div>
   <p class="small muted">You'll use this PIN to log in on your phone. The organiser can reset it if you forget.</p>
   <div class="row" style="margin-top:14px"><button class="btn" data-act="welcomeBack">Back</button><button class="btn pri grow" data-act="joinNew">Join the ladder</button></div></div></main>`;
  return`<div class="hero">${CREST}<h1>${esc(S.settings.club)}</h1><div class="sub">Spearhead League · Age of Sigmar</div></div>
- <main>${getApp}<div class="card"><h2>I'm playing</h2>${S.players.length?`<p class="small muted" style="margin-top:0">Tap your name, then enter your PIN.</p><div class="plist">${players().map(p=>`<button class="chip" data-act="iam" data-v="${p.id}"><b>${esc(p.name)}</b><span class="fac">${esc(p.faction||"")}</span></button>`).join("")}</div>`:""}
+ <main>${getApp}<div class="card"><h2>I'm playing</h2>${S.players.length?`<p class="small muted" style="margin-top:0">Tap your name, then enter your PIN.</p><div class="plist">${players().map(p=>`<button class="chip" data-act="iam" data-v="${p.id}"><b>${esc(p.name)}</b><span class="fac">${esc(p.warband||p.faction||"")}</span></button>`).join("")}</div>`:""}
  <button class="btn big" style="margin-top:12px" data-act="welcomeNew">＋ I'm new — add me</button></div>
  <div class="card"><h2>Just watching</h2><p class="small muted" style="margin-top:0">See the ladder and follow live games. No scoring.</p><button class="btn big" data-act="viewer">Continue as viewer</button></div>
  ${NATIVE?`<p class="small muted" style="text-align:center">Server: ${esc(BASE)} · <a href="#connect" style="color:var(--mut)">change</a></p>`:""}</main>`;
@@ -299,13 +372,13 @@ function vLadder(){
  let sug="";
  if(me&&S.players.length>1){const rec=recentOpps(me,2),busy=new Set(lv.flatMap(g=>g.teams.flat())),R=L.byId;
   const c=S.players.filter(p=>p.id!==me&&!busy.has(p.id)).map(p=>({p,c:Math.abs(R[p.id].pts-R[me].pts)+(rec.includes(p.id)?10:0)})).sort((a,b)=>a.c-b.c).slice(0,3);
-  if(c.length)sug=`<div class="card"><h2>Suggested for you</h2><div class="chips">${c.map(x=>`<a class="chip" href="#new/${x.p.id}"><b>⚔ ${esc(x.p.name)}</b><span class="fac">${R[x.p.id].pts} pts · ${esc(x.p.faction||"")}</span></a>`).join("")}</div><p class="small muted" style="margin:8px 0 0">Close to you on points and not played recently. Just a suggestion — tap Play on anyone below.</p></div>`}
+  if(c.length)sug=`<div class="card"><h2>Suggested for you</h2><div class="chips">${c.map(x=>`<a class="chip" href="#new/${x.p.id}"><b>⚔ ${esc(x.p.name)}</b><span class="fac">${R[x.p.id].pts} pts · ${esc(x.p.warband||x.p.faction||"")}</span></a>`).join("")}</div><p class="small muted" style="margin:8px 0 0">Close to you on points and not played recently. Just a suggestion — tap Play on anyone below.</p></div>`}
  const liveCard=lv.length?`<div class="card"><h2>Live now</h2>${lv.map(liveLine).join("")}</div>`:"";
  return`${liveCard}${sug}<div class="card"><h2>Ladder</h2>
  ${S.players.length?`<div class="tw"><table><tr><th>#</th><th>Player</th><th class="n">Pts</th><th class="n">GP</th><th class="n">W-D-L</th><th class="n">★</th><th class="n">VP±</th><th>Form</th>${me?"<th></th>":""}</tr>
  ${rows.map((x,i)=>`<tr class="r${x.gp?i+1:0} ${x.id===me?"me":""}"><td class="rank">${x.gp?i+1:"–"}</td><td><b>${esc(x.name)}</b><div class="fac">${esc(x.fac||"")}</div></td><td class="n pts">${x.pts}</td><td class="n" title="${x.g1} × 1v1, ${x.g2} × 2v2">${x.gp}${x.g2?`<div class="fac">${x.g2} × 2v2</div>`:""}</td><td class="n">${x.w}-${x.d}-${x.l}</td><td class="n">${x.up||""}</td><td class="n">${x.vf-x.va>0?"+":""}${x.vf-x.va}</td><td class="form">${x.form.slice(-5).map(f=>`<span class="${f}">${f}</span>`).join("")}</td>${me?`<td style="text-align:right">${x.id!==me?`<a class="btn sm pri" href="#new/${x.id}">Play</a>`:""}</td>`:""}</tr>`).join("")}
  </table></div><p class="small muted">${pointsRule()} ★ = upsets.</p>`:`<div class="empty">No players yet.</div>`}</div>
- ${(()=>{const fs=factionStats();return fs.length?`<div class="card"><h2>Faction performance</h2><div class="tw"><table><tr><th>Faction</th><th class="n">Games</th><th class="n">Win %</th><th style="width:35%"></th></tr>${fs.map(f=>{const p=Math.round((f.w+f.d/2)/f.g*100);return`<tr><td>${esc(f.n)}</td><td class="n">${f.g}</td><td class="n">${p}%</td><td><div class="bar"><i style="width:${p}%"></i></div></td></tr>`}).join("")}</table></div><p class="small muted">All finished games, 1v1 and 2v2. Draws count as half a win.</p></div>`:""})()}`;
+ ${(()=>{const fs=factionStats();return fs.length?`<div class="card"><div class="row between" style="margin-bottom:6px"><h2 style="margin:0">Performance</h2><div class="seg"><button data-act="statBy" data-v="faction" class="${ui.statBy!=="warband"?"on":""}">Faction</button><button data-act="statBy" data-v="warband" class="${ui.statBy==="warband"?"on":""}">Warband</button></div></div><div class="tw"><table><tr><th>${ui.statBy==="warband"?"Warband":"Faction"}</th><th class="n">Games</th><th class="n">Win %</th><th style="width:35%"></th></tr>${fs.map(f=>{const p=Math.round((f.w+f.d/2)/f.g*100);return`<tr><td>${esc(f.n)}</td><td class="n">${f.g}</td><td class="n">${p}%</td><td><div class="bar"><i style="width:${p}%"></i></div></td></tr>`}).join("")}</table></div><p class="small muted">All finished games, 1v1 and 2v2. Draws count as half a win.</p></div>`:""})()}`;
 }
 function liveLine(g){const t=totals(g);return`<a class="lg" href="#game/${g.id}"><div class="row between"><div><span class="pill live">LIVE</span> <span class="pill">${g.mode} · R${g.round}</span><div style="margin-top:4px"><b>${esc(tn(g.teams[0]))}</b> vs <b>${esc(tn(g.teams[1]))}</b></div></div><div class="score">${t[0]} – ${t[1]}</div></div></a>`}
 function vLive(){
@@ -315,7 +388,7 @@ function vLive(){
 }
 function sideCard(g,s,edit){
  const t=totals(g),team=g.teams[s];
- return`<div class="side ${s?"b":"a"}"><div class="nm">${team.map(id=>esc(pn(id))).join("<br>")}</div><div class="fac">${team.map(id=>esc(g.factions[id]||"")).filter(Boolean).join(" · ")}</div>
+ return`<div class="side ${s?"b":"a"}"><div class="nm">${team.map(id=>esc(pn(id))).join("<br>")}</div><div class="fac">${team.map(id=>esc(gWb(g,id)||gFac(g,id))).filter(Boolean).join(" · ")}</div>
  <div class="big">${t[s]}</div><div class="small muted">total VP</div>
  <div class="ctr"><span class="l">Round ${g.round} VP</span>${edit?`<button data-act="vp" data-v="${s}:-1">−</button>`:""}<span class="v">${g.vp[g.round-1][s]}</span>${edit?`<button data-act="vp" data-v="${s}:1">+</button>`:""}</div></div>`;
 }
@@ -324,23 +397,59 @@ function awardTable(g){
  if(!aw)return`<p class="small muted">${g.ladder===false?"This game doesn't count toward the ladder.":""}</p>`;
  return`<table class="awt">${g.teams.flat().map(id=>{const a=aw[id];return`<tr><td><b>${esc(pn(id))}</b>${a.upset?' <span class="pill up">UPSET</span>':""}<div class="fac">${a.parts.map(p=>`${p[0]} +${p[1]}`).join(" · ")||"no points"}</div></td><td class="n pts">+${a.tot}</td></tr>`}).join("")}</table>`;
 }
+const REALMS=["Aqshy (Fire)","Ghyran (Jade)","Ossia (Sand)","Dolorum (Bone)","Other"];
+function sideName(g,s){return esc(tn(g.teams[s]))}
+function setupSummary(g){const st=g.setup||{};const bits=[];
+ if(st.rolloff!=null)bits.push(`Roll-off won by <b>${sideName(g,st.rolloff)}</b>`);
+ if(st.attacker!=null)bits.push(`Attacker: <b>${sideName(g,st.attacker)}</b>`);
+ if(st.first_turn!=null)bits.push(`First turn: <b>${sideName(g,st.first_turn)}</b>`);
+ if(st.realm)bits.push(`Realm: <b>${esc(st.realm)}</b>`);
+ return bits.length?`<div class="small muted" style="line-height:1.8">${bits.join(" · ")}</div>`:""}
+const SETUP_STEPS=[
+ {t:"Roll off",d:"Both sides roll a dice (re-roll ties). Who won the roll-off?",pick:"rolloff"},
+ {t:"Attacker or defender",d:g=>`<b>${sideName(g,g.setup.rolloff)}</b> won — they choose who is the <b>attacker</b>. Who is attacking?`,pick:"attacker"},
+ {t:"Regiment ability & enhancement",d:g=>`The attacker (<b>${sideName(g,g.setup.attacker)}</b>) picks their regiment ability and enhancement, then the defender (<b>${sideName(g,1-g.setup.attacker)}</b>) picks theirs.`},
+ {t:"Realm battlefield",d:g=>`The defender (<b>${sideName(g,1-g.setup.attacker)}</b>) chooses which side of the realm battlefield board to play on.`,realm:true},
+ {t:"Map & territory",d:g=>`The defender picks the deployment map (horizontal or diagonal) and chooses which territory is theirs. Set up the objectives as shown on the map.`},
+ {t:"Terrain",d:g=>`The defender (<b>${sideName(g,1-g.setup.attacker)}</b>) sets up 1 large and 1 small terrain feature, then the attacker (<b>${sideName(g,g.setup.attacker)}</b>) does the same. Terrain can't go on objectives.`},
+ {t:"Deploy",d:g=>`The attacker (<b>${sideName(g,g.setup.attacker)}</b>) sets up their whole army first, then the defender. Every unit wholly within friendly territory and more than 6" from enemy territory.`},
+ {t:"First turn",d:g=>`Battle round 1: the attacker (<b>${sideName(g,g.setup.attacker)}</b>) chooses who takes the first turn. Who's going first?`,pick:"first_turn"},
+ {t:"Battle tactics",d:g=>`Each player draws battle tactic cards until they have 3. From battle round 2, the priority roll decides who chooses the first turn. Ready?`,last:true}];
+function vSetup(g,edit){
+ const st=g.setup||{},i=Math.min(st.step||0,SETUP_STEPS.length-1),S0=SETUP_STEPS[i];
+ const d=typeof S0.d==="function"?S0.d(g):S0.d;
+ let ctl="";
+ if(S0.pick)ctl=`<div class="row" style="margin-top:12px">${[0,1].map(sd=>`<button class="btn big ${st[S0.pick]===sd?"pri":""}" style="flex:1" ${edit?`data-act="setPick" data-v="${S0.pick}:${sd}"`:"disabled"}>${sideName(g,sd)}</button>`).join("")}</div>`;
+ else if(S0.realm)ctl=`<div class="row" style="margin-top:12px">${REALMS.map(r=>`<button class="btn ${st.realm===r?"pri":""}" ${edit?`data-act="setRealm" data-v="${esc(r)}"`:"disabled"}>${esc(r)}</button>`).join("")}</div>`;
+ const nextOk=!S0.pick||st[S0.pick]!=null;
+ return`<div class="card"><div class="row between"><span class="pill live">PRE-BATTLE · ${g.mode}</span><span class="small muted">Step ${i+1} of ${SETUP_STEPS.length}</span></div>
+ <div class="steps">${SETUP_STEPS.map((x,k)=>`<i class="${k<i?"done":k===i?"on":""}"></i>`).join("")}</div>
+ <h2 style="margin:6px 0">${S0.t}</h2><p style="margin:0">${d}</p>${ctl}
+ ${edit?`<div class="row between" style="margin-top:16px"><button class="btn" ${i?`data-act="setStep" data-v="${i-1}"`:"disabled"}>← Back</button>${S0.last?`<button class="btn pri" data-act="setDone">Start the battle ⚔</button>`:`<button class="btn pri" ${nextOk?`data-act="setStep" data-v="${i+1}"`:"disabled"}>Next →</button>`}</div>
+ <p class="small muted" style="margin-top:10px">Both phones follow along. <a href="#" data-act="setSkip" style="color:var(--mut)">Skip setup</a></p>`:`<p class="small muted">The players are setting up — scoring starts when they're done.</p>`}
+ ${setupSummary(g)}</div>`;
+}
 function vGame(id){
  const g=S.games.find(x=>x.id===id);
  if(!g)return`<div class="card empty">This game isn't here any more — it may have been abandoned.<br><br><a class="btn" href="#ladder">Back to ladder</a></div>`;
- const edit=canScore(g)&&g.status==="live",t=totals(g),N=g.vp.length;
+ const edit=canScore(g)&&g.status==="live",t=totals(g),N=g.vp.length,st=g.setup||{};
  const under=t[0]===t[1]?null:(t[0]<t[1]?0:1);
  if(g.status==="done"){const w=t[0]>t[1]?0:t[1]>t[0]?1:null;
-  return`<div class="card" style="text-align:center"><span class="pill">${g.mode} · ${fdate(g.finished)}${g.ladder===false?" · not ranked":""}</span>
+  return`${arena(g)}<div class="card" style="text-align:center"><span class="pill">${g.mode} · ${fdate(g.finished)}${g.ladder===false?" · not ranked":""}</span>
   <h2 style="margin:12px 0 4px">${w==null?"Draw":esc(tn(g.teams[w]))+(g.teams[w].length>1?" win":" wins")}</h2><div class="score" style="font-size:40px">${t[0]} – ${t[1]}</div>
-  <div class="small muted">${esc(tn(g.teams[0]))} vs ${esc(tn(g.teams[1]))}</div></div>
+  <div class="small muted">${esc(tn(g.teams[0]))} vs ${esc(tn(g.teams[1]))}</div>${setupSummary(g)}</div>
   <div class="card"><h2>Ladder points</h2>${awardTable(g)}</div>
   ${g.final_only&&!isAdmin?"":`<div class="card"><h2>By round</h2>${roundGrid(g,isAdmin)}${isAdmin?`<div class="row" style="margin-top:10px"><div class="chk"><label><input type="checkbox" id="fix-ladder" ${g.ladder!==false?"checked":""}> Counts toward ladder</label></div><button class="btn pri" data-act="fixGame" data-v="${g.id}">Save fix</button><button class="btn dan" data-confirm data-act="delGame" data-v="${g.id}">Delete game</button></div>`:""}</div>`}
   <a class="btn" href="#ladder">← Ladder</a>`}
- return`<div class="card"><div class="row between"><span class="pill live">LIVE · ${g.mode}</span><span class="small muted">${edit?"You're scoring — every phone updates live":"Watching live"}</span></div>
+ if(!st.done)return arena(g)+vSetup(g,edit);
+ const firsts=st.firsts||{},ft=g.round===1?(firsts["1"]!=null?firsts["1"]:st.first_turn):firsts[String(g.round)];
+ const ftRow=`<div class="row" style="justify-content:center;margin-bottom:8px"><span class="small muted">${g.round===1?"First turn (attacker's choice)":"Priority roll — first turn"}:</span>${[0,1].map(sd=>`<button class="btn sm ${ft===sd?"pri":""}" ${edit?`data-act="roundFirst" data-v="${sd}"`:"disabled"}>${sideName(g,sd)}</button>`).join("")}</div>`;
+ return`${arena(g)}<div class="card"><div class="row between"><span class="pill live">LIVE · ${g.mode}</span><span class="small muted">${edit?"You're scoring — every phone updates live":"Watching live"}</span></div>
  <div class="rounds" style="margin-top:10px">${Array.from({length:N},(_,i)=>`<button class="${g.round===i+1?"on":""}" ${edit?`data-act="round" data-v="${i+1}"`:"disabled"}>${i+1}</button>`).join("")}</div>
- <div class="small muted" style="text-align:center;margin-bottom:8px">Battle round ${g.round} of ${N}${under!=null?` · underdog: <b>${esc(tn(g.teams[under]))}</b> (${Math.abs(t[0]-t[1])} behind)`:" · scores level"}</div>
+ <div class="small muted" style="text-align:center;margin-bottom:6px">Battle round ${g.round} of ${N}${under!=null?` · underdog: <b>${esc(tn(g.teams[under]))}</b> (${Math.abs(t[0]-t[1])} behind)`:" · scores level"}</div>
+ ${ftRow}
  <div class="live">${sideCard(g,0,edit)}${sideCard(g,1,edit)}</div>
- <div style="margin-top:12px">${roundGrid(g,false)}</div>
+ <div style="margin-top:12px">${roundGrid(g,false)}</div>${setupSummary(g)}
  ${edit?`<div class="row between" style="margin-top:14px"><button class="btn dan" data-confirm data-act="abandon" data-v="${g.id}">Abandon</button><div class="row">${g.round<N?`<button class="btn" data-act="round" data-v="${g.round+1}">Next round →</button>`:""}<button class="btn pri" data-confirm data-act="finish" data-v="${g.id}">Finish game</button></div></div>`:""}</div>`;
 }
 function roundGrid(g,editable){const t=totals(g);
@@ -350,7 +459,7 @@ function vNew(){
  if(!isPlayer())return`<div class="card empty">Choose your name first to start a game.<br><br><a class="btn pri" href="#welcome">I'm playing</a></div>`;
  const parts=location.hash.slice(1).split("/"),opp=parts[1]||"";
  const mode=ui.newMode,me=ME.pid;
- const slot=(id,key,label)=>`<div class="slot"><label class="lb">${label}</label><select id="s-${key}" data-keep data-ch="slot" data-v="${key}">${plOpts(id)}</select><select id="f-${key}" data-keep>${facOpts(id&&P(id)?P(id).faction:"")}</select></div>`;
+ const slot=(id,key,label)=>`<div class="slot"><label class="lb">${label}</label><select id="s-${key}" data-keep data-ch="slot" data-v="${key}">${plOpts(id)}</select><select id="w-${key}" data-keep>${wbOpts(id?pWb(id):"")}</select></div>`;
  const A=mode==="1v1"?[slot(me,"a0","You")]:[slot(me,"a0","You"),slot("","a1","Teammate")];
  const B=mode==="1v1"?[slot(opp,"b0","Opponent")]:[slot(opp,"b0","Opponent 1"),slot("","b1","Opponent 2")];
  return`<div class="card"><div class="row between"><h2 style="margin:0">New game</h2><div class="seg"><button data-act="newMode" data-v="1v1" class="${mode==="1v1"?"on":""}">1v1</button><button data-act="newMode" data-v="2v2" class="${mode==="2v2"?"on":""}">2v2</button></div></div>
@@ -360,7 +469,7 @@ function vNew(){
  <div class="chk" style="margin-top:12px"><label><input type="checkbox" id="n-ladder" data-keep checked> Counts toward the ladder</label><label><input type="checkbox" id="n-final" data-keep data-ch="final" ${ui.finalOnly?"checked":""}> Already played — just enter the final score</label></div>
  ${ui.finalOnly?`<div class="row" style="margin-top:10px"><span class="grow">Final VP</span><input type="number" id="n-va" data-keep placeholder="A"> – <input type="number" id="n-vb" data-keep placeholder="B"></div>`:""}
  <details style="margin-top:12px"><summary class="small" style="cursor:pointer;color:var(--gold2)">＋ Add a player who isn't on the list (no phone)</summary>
- <div class="slot" style="margin-top:8px"><input id="ap-name" placeholder="Their name"><select id="ap-fac">${facOpts("")}</select><input id="ap-pin" type="password" inputmode="numeric" maxlength="6" placeholder="Their PIN (4–6 digits) — let them type it">
+ <div class="slot" style="margin-top:8px"><input id="ap-name" placeholder="Their name"><select id="ap-wb">${wbOpts("")}</select><input id="ap-pin" type="password" inputmode="numeric" maxlength="6" placeholder="Their PIN (4–6 digits) — let them type it">
  <button class="btn" data-act="addOther">Add to ladder</button></div></details>
  <div class="row" style="margin-top:14px"><a class="btn" href="#ladder">Cancel</a><button class="btn pri grow" data-act="startGame">${ui.finalOnly?"Save result":"Start live game"}</button></div></div>`;
 }
@@ -384,13 +493,14 @@ function vHistory(){
  return`<div class="card"><div class="row between"><h2 style="margin:0">Results</h2><div class="seg">${["all","1v1","2v2"].map(m=>`<button data-act="hist" data-v="${m}" class="${f===m?"on":""}">${m==="all"?"All":m}</button>`).join("")}</div></div>
  ${gs.length?gs.map(g=>{const t=totals(g),a=aw[g.id];return`<a class="lg" href="#game/${g.id}"><div class="row between"><div><span class="pill">${g.mode}</span> <span class="small muted">${fdate(g.finished)}</span>${g.ladder===false?' <span class="pill">not ranked</span>':""}
   <div style="margin-top:4px"><span class="${t[0]>t[1]?"win":""}">${esc(tn(g.teams[0]))}</span> <span class="muted">vs</span> <span class="${t[1]>t[0]?"win":""}">${esc(tn(g.teams[1]))}</span></div>
-  ${(()=>{const fa=g.teams.map(t=>t.map(id=>g.factions[id]).filter(Boolean).join(" · "));return fa[0]||fa[1]?`<div class="fac">${esc(fa[0]||"?")} vs ${esc(fa[1]||"?")}</div>`:""})()}
+  ${(()=>{const fa=g.teams.map(t=>t.map(id=>gWb(g,id)||gFac(g,id)).filter(Boolean).join(" · "));return fa[0]||fa[1]?`<div class="fac">${esc(fa[0]||"?")} vs ${esc(fa[1]||"?")}</div>`:""})()}
   ${a?`<div class="aw">${g.teams.flat().map(id=>`<span>${esc(pn(id))} <b>+${a[id].tot}</b>${a[id].upset?" ★":""}</span>`).join("")}</div>`:""}</div><div class="score">${t[0]} – ${t[1]}</div></div></a>`}).join(""):`<div class="empty">No finished games yet.</div>`}</div>`;
 }
 function vMe(){
  const p=isPlayer()?P(ME.pid):null;
- return`<div class="card"><h2>${p?esc(p.name):"Viewer"}</h2>${p?`<label class="lb">Usual faction</label><div class="row"><select id="me-fac" data-keep class="grow">${facOpts(p.faction)}</select><button class="btn pri" data-act="saveFac">Save</button></div>`:`<p class="muted small" style="margin-top:0">You're watching only. Switch to a player to start and score games.</p>`}
- <div class="row" style="margin-top:14px"><button class="btn" data-act="switch">${p?"Log out":"I'm playing — log in"}</button></div></div>
+ return`<div class="card"><h2>${p?esc(p.name):"Viewer"}</h2>${p?`<label class="lb">Your Spearhead warband</label><div class="row"><select id="me-wb" data-keep class="grow">${wbOpts(p.warband)}</select><button class="btn pri" data-act="saveFac">Save</button></div><p class="small muted">Play a different army? Just change it here, or pick a warband when you start a game. Your points stay with your name.</p>`:`<p class="muted small" style="margin-top:0">You're watching only. Switch to a player to start and score games.</p>`}
+ <div class="row" style="margin-top:14px"><button class="btn" data-act="switch">${p?"Log out":"I'm playing — log in"}</button>${p?`<button class="btn dan" data-confirm data-act="delMe">Delete my account</button>`:""}</div>
+ ${p&&S.games.some(g=>inGame(g,p.id))?`<p class="small muted">Your account has games on the ladder, so it can only be deleted by merging — ask the organiser.</p>`:""}</div>
  ${NATIVE?`<div class="card"><h2>Club server</h2><p class="small muted" style="margin-top:0">${esc(BASE)}</p><a class="btn" href="#connect">Change server</a><p class="small muted">App build ${APP_VERSION||"dev"}</p></div>`:""}`;
 }
 function vAdmin(){
@@ -404,6 +514,11 @@ function vAdmin(){
  <div class="card"><h2>Players</h2><div class="tw"><table>${players().map(p=>{const n=S.games.filter(g=>inGame(g,p.id)).length;return`<tr><td><input id="pn-${p.id}" data-keep value="${esc(p.name)}" style="width:100%"></td><td class="n small muted">${n} games</td><td style="text-align:right;white-space:nowrap"><button class="btn sm" data-act="rename" data-v="${p.id}">Rename</button> ${n?"":`<button class="btn sm dan" data-confirm data-act="delPlayer" data-v="${p.id}">Delete</button>`}</td></tr>
  <tr><td colspan="3" style="border-bottom:1px solid var(--line)"><div class="row"><span class="small muted grow">${p.has_pin?"Has a PIN":"No PIN yet"}</span><input id="pr-${p.id}" type="password" inputmode="numeric" maxlength="6" placeholder="New PIN" style="width:110px"><button class="btn sm" data-act="resetPin" data-v="${p.id}">Reset PIN</button></div></td></tr>`}).join("")}</table></div>
  <p class="small muted">To fix or delete a result, open it from History.</p></div>
+ <div class="card"><h2>Merge accounts</h2><p class="small muted" style="margin-top:0">For someone with two accounts: moves every game from the first into the second, then removes the first. Their warband choices stay with each game.</p>
+ <div class="row"><select id="mg-from" class="grow">${plOpts("")}</select><span>into</span><select id="mg-into" class="grow">${plOpts("")}</select><button class="btn pri" data-confirm data-act="merge">Merge</button></div></div>
+ <div class="card"><h2>Extra warbands</h2><p class="small muted" style="margin-top:0">New Spearhead not in the list yet? Add it here and it appears for everyone.</p>
+ ${(S.settings.extra_warbands||[]).map((x,i)=>`<div class="row" style="margin-bottom:6px"><span class="grow">${esc(x.name)} <span class="fac">· ${esc(x.faction)}</span></span><button class="btn sm dan" data-act="delWb" data-v="${i}">Remove</button></div>`).join("")}
+ <div class="row"><select id="xw-fac">${facOpts("")}</select><input id="xw-name" class="grow" placeholder="Warband name"><button class="btn" data-act="addWb">Add</button></div></div>
  <div class="card"><h2>Backup</h2>${NATIVE?`<p class="small muted" style="margin-top:0">Download backups from the web version on a computer, or copy <code>spearhead.db</code> from the Pi.</p>`:`<a class="btn" href="/api/export?key=${encodeURIComponent(ADMIN)}">Download backup (JSON)</a><p class="small muted">The whole league lives in <code>spearhead.db</code> on the Pi — copying that file is a full backup too.</p>`}</div>`;
 }
 
@@ -425,17 +540,28 @@ const A={
  iam:v=>go("login/"+v),
  login:async v=>{const pin=val("li-pin").trim();if(!/^\d{4,6}$/.test(pin))return toast("PIN must be 4 to 6 digits");const j=await api("POST","/api/login",{pid:v,pin});setMe({role:"player",pid:v,token:j.token});toast("Welcome, "+pn(v),true);go("ladder")},
  addOther:async()=>{const name=val("ap-name").trim(),pin=val("ap-pin").trim();if(!name)return toast("Enter their name");if(!/^\d{4,6}$/.test(pin))return toast("Their PIN must be 4 to 6 digits");
-  const j=await api("POST","/api/players",{name,faction:val("ap-fac"),pin});render();
-  const slot=[...document.querySelectorAll("select[id^='s-']")].find(e=>!e.value);if(slot){slot.value=j.new_id;const f=document.getElementById("f-"+slot.id.slice(2));if(f)f.value=val("ap-fac")||""}
+  const wb=val("ap-wb");const j=await api("POST","/api/players",{name,warband:wb,faction:facOf(wb),pin});render();
+  const slot=[...document.querySelectorAll("select[id^='s-']")].find(e=>!e.value);if(slot){slot.value=j.new_id;const f=document.getElementById("w-"+slot.id.slice(2));if(f)f.value=wb||""}
   toast(name+" added to the ladder",true)},
  resetPin:async v=>{const pin=val("pr-"+v).trim();if(!/^\d{4,6}$/.test(pin))return toast("PIN must be 4 to 6 digits");await api("POST",`/api/players/${v}/reset-pin`,{pin});toast("PIN reset for "+pn(v),true);render()},
  viewer:()=>{setMe({role:"viewer"});go("ladder")},
  welcomeNew:()=>{ui.welcomeNew=true;render()},
  welcomeBack:()=>{ui.welcomeNew=false;render()},
  joinNew:async()=>{const name=val("wn-name").trim(),pin=val("wn-pin").trim();if(!name)return toast("Enter your name");if(!/^\d{4,6}$/.test(pin))return toast("PIN must be 4 to 6 digits");if(pin!==val("wn-pin2").trim())return toast("The two PINs don't match");
-  const j=await api("POST","/api/players",{name,faction:val("wn-fac"),pin});setMe({role:"player",pid:j.new_id,token:j.token});ui.welcomeNew=false;go("ladder")},
+  const wb=val("wn-wb");const j=await api("POST","/api/players",{name,warband:wb,faction:facOf(wb),pin});setMe({role:"player",pid:j.new_id,token:j.token});ui.welcomeNew=false;go("ladder")},
  switch:async()=>{if(ME&&ME.token){try{await fetch(BASE+"/api/logout",{method:"POST",headers:{"X-Player-Token":ME.token}})}catch(e){}}setMe(null);ui.welcomeNew=false;go("welcome")},
- saveFac:async()=>{await api("PATCH","/api/players/"+ME.pid,{faction:val("me-fac")});toast("Saved",true);go("ladder")},
+ saveFac:async()=>{const wb=val("me-wb");await api("PATCH","/api/players/"+ME.pid,{warband:wb,faction:facOf(wb)});toast("Saved",true);go("ladder")},
+ delMe:async()=>{await api("DELETE","/api/players/"+ME.pid);setMe(null);toast("Account deleted",true);go("welcome")},
+ statBy:v=>{ui.statBy=v;render()},
+ setPick:v=>{const[k,sd]=v.split(":");const b={[k]:Number(sd)};if(k==="first_turn")b.round_first={round:1,side:Number(sd)};api("POST",`/api/games/${route().a}/setup`,b).then(render).catch(()=>{})},
+ setRealm:v=>{api("POST",`/api/games/${route().a}/setup`,{realm:v}).then(render).catch(()=>{})},
+ setStep:v=>{api("POST",`/api/games/${route().a}/setup`,{step:Number(v)}).then(render).catch(()=>{})},
+ setDone:()=>{api("POST",`/api/games/${route().a}/setup`,{done:true}).then(render).catch(()=>{})},
+ setSkip:()=>{api("POST",`/api/games/${route().a}/setup`,{done:true}).then(render).catch(()=>{})},
+ roundFirst:v=>{const g=S.games.find(x=>x.id===route().a);const b={round_first:{round:g.round,side:Number(v)}};if(g.round===1)b.first_turn=Number(v);api("POST",`/api/games/${g.id}/setup`,b).then(render).catch(()=>{})},
+ merge:async()=>{const a=val("mg-from"),b=val("mg-into");if(!a||!b||a===b)return toast("Pick two different accounts");await api("POST",`/api/players/${a}/merge`,{into:b});toast("Merged into "+pn(b),true);render()},
+ addWb:async()=>{const f=val("xw-fac"),n=val("xw-name").trim();if(!f||!n)return toast("Pick a faction and type the warband name");const ew=(S.settings.extra_warbands||[]).concat([{faction:f,name:n}]);await api("POST","/api/settings",{extra_warbands:ew});toast("Warband added",true);render()},
+ delWb:async v=>{const ew=(S.settings.extra_warbands||[]).filter((_,i)=>i!==Number(v));await api("POST","/api/settings",{extra_warbands:ew});render()},
  hist:v=>{ui.hist=v;render()},
  newMode:v=>{ui.newMode=v;render()},
  startGame:async()=>{
@@ -443,8 +569,8 @@ const A={
   const teams=keys.map(t=>t.map(k=>val("s-"+k)));
   if(teams.flat().some(x=>!x))return toast("Pick every player");
   if(new Set(teams.flat()).size!==teams.flat().length)return toast("Each player can only be picked once");
-  const factions={};keys.flat().forEach(k=>factions[val("s-"+k)]=val("f-"+k));
-  const extra={ladder:document.getElementById("n-ladder").checked};
+  const factions={},warbands={};keys.flat().forEach(k=>{const pid=val("s-"+k),wb=val("w-"+k);warbands[pid]=wb;factions[pid]=facOf(wb)||((P(pid)||{}).faction||"")});
+  const extra={ladder:document.getElementById("n-ladder").checked,warbands};
   if(ui.finalOnly){const a=val("n-va"),b=val("n-vb");if(a===""||b==="")return toast("Enter both final scores");extra.final=[num(a),num(b)]}
   await startGame(ui.newMode,teams,factions,extra);ui.finalOnly=false},
  vp:v=>{const[s,d]=v.split(":").map(Number),id=route().a,g=S.games.find(x=>x.id===id);api("POST",`/api/games/${id}/vp`,{side:s,delta:d,round:g.round}).then(render).catch(()=>{})},
@@ -455,7 +581,7 @@ const A={
  sug:v=>{const ids=[...document.querySelectorAll(".here:checked")].map(e=>e.value);ui.sug=v==="1v1"?Object.assign({mode:"1v1"},suggest1v1(ids)):Object.assign({mode:"2v2"},suggest2v2(ids));render()},
  hereAll:()=>{ls.set(HERE_KEY,JSON.stringify(S.players.map(p=>p.id)));render()},
  hereNone:()=>{ls.set(HERE_KEY,"[]");ui.sug=null;render()},
- startSug:v=>{const teams=v.split("|").map(t=>t.split(","));const factions={};teams.flat().forEach(id=>factions[id]=(P(id)||{}).faction||"");startGame(teams[0].length>1?"2v2":"1v1",teams,factions)},
+ startSug:v=>{const teams=v.split("|").map(t=>t.split(","));const factions={},warbands={};teams.flat().forEach(id=>{warbands[id]=pWb(id);factions[id]=facOf(pWb(id))||((P(id)||{}).faction||"")});startGame(teams[0].length>1?"2v2":"1v1",teams,factions,{warbands})},
  admLogin:async()=>{ADMIN=val("adm-key");let r;try{r=await fetch(BASE+"/api/admin/check",{headers:{"X-Admin-Key":ADMIN}}).then(r=>r.json())}catch(e){return toast("Can't reach the server")}
   if(!r.configured){toast("No ADMIN_KEY is set on the server — see README");return}
   if(r.ok){isAdmin=true;ls.set(ADM_KEY,ADMIN);render()}else toast("Wrong admin key")},
@@ -471,7 +597,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
  if(b.hasAttribute("data-confirm")&&!b.classList.contains("armed")){const o=b.textContent;b.classList.add("armed");b.textContent="Tap again to confirm";setTimeout(()=>{if(b.isConnected){b.classList.remove("armed");b.textContent=o}},3000);return}
  const f=A[b.dataset.act];if(f){const p=f(b.dataset.v);if(p&&p.catch)p.catch(()=>{})}});
 document.addEventListener("change",e=>{const el=e.target,k=el.dataset&&el.dataset.ch;if(!k)return;
- if(k==="slot"){const p=P(el.value),f=document.getElementById("f-"+el.dataset.v);if(p&&f)f.value=p.faction||""}
+ if(k==="slot"){const p=P(el.value),f=document.getElementById("w-"+el.dataset.v);if(p&&f)f.value=p.warband||""}
  else if(k==="final"){ui.finalOnly=el.checked;render()}
  else if(k==="here"){ls.set(HERE_KEY,JSON.stringify([...document.querySelectorAll(".here:checked")].map(x=>x.value)))}});
 window.addEventListener("hashchange",()=>{const {v}=route();if(v==="new"&&!/^#new/.test(ui._prev||""))ui.newMode="1v1";ui._prev=location.hash;render();window.scrollTo(0,0)});
