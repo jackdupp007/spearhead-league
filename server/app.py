@@ -492,6 +492,13 @@ def game_setup(gid):
             st["step"] = max(0, min(20, int(b["step"])))
         if "done" in b:
             st["done"] = bool(b["done"])
+        if "check" in b:  # start-of-round checklist tick: {"round": n, "i": item, "val": bool}
+            ck = b["check"] or {}
+            rnd, i = int(ck.get("round", 0)), int(ck.get("i", -1))
+            if not 1 <= rnd <= len(d["vp"]) or not 0 <= i < 10:
+                abort(400, "Bad checklist item")
+            lst = st.setdefault("checks", {}).setdefault(str(rnd), [False] * 10)
+            lst[i] = bool(ck.get("val"))
         if "round_first" in b:  # {"round": n, "side": 0|1|null}
             rf = b["round_first"] or {}
             rnd, side = int(rf.get("round", 0)), rf.get("side")

@@ -158,6 +158,13 @@ tr.me td{background:rgba(210,169,79,.08)}
 @keyframes walk{to{transform:translateX(calc(100vw + 80px))}}@keyframes walkR{to{transform:translateX(calc(-100vw - 80px))}}
 body{padding-bottom:calc(34px + env(safe-area-inset-bottom))}
 @media(max-width:420px){.hn{display:none}td,th{padding-left:3px;padding-right:3px}}
+.rp{background:var(--p2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:4px 0 10px}
+.rp summary{cursor:pointer;font-weight:700;color:var(--gold2);font-size:14px}
+.ck{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #2f2a35;font-size:13px;line-height:1.4}
+.ck input{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--gold)}
+.ck:has(input:checked)>span{opacity:.55}
+.warn{margin-top:6px;color:#ffcf6a;font-size:12px}
+.sh{font-size:13px}.sh td,.sh th{padding:5px 3px;text-align:center}.sh td:first-child{text-align:left;color:var(--mut)}
 #toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#3a2a2a;border:1px solid var(--red);padding:10px 16px;border-radius:10px;z-index:9;display:none;max-width:90vw}
 footer{text-align:center;padding:20px;font-size:12px}
 footer a{color:var(--mut);margin:0 8px}
@@ -636,6 +643,30 @@ function vSetup(g,edit){
  <p class="small muted" style="margin-top:10px">Both phones follow along. <a href="#" data-act="setSkip" style="color:var(--mut)">Skip setup</a></p>`:`<p class="small muted">The players are setting up — scoring starts when they're done.</p>`}
  ${setupSummary(g)}</div>`;
 }
+function firstOf(g,r){const st=g.setup||{},f=st.firsts||{};return r===1?(f["1"]!=null?f["1"]:st.first_turn):f[String(r)]}
+function roundPanel(g,edit,under,t){
+ const r=g.round,st=g.setup||{},ck=(st.checks||{})[String(r)]||[],ft=firstOf(g,r),prev=r>1?firstOf(g,r-1):null;
+ const dbl=r>1&&ft!=null&&prev!=null&&ft!==prev;               // went second last round, first this round
+ const twistDeck=st.realm&&st.realm!=="Other"?`the <b>${esc(st.realm.split(" ")[0])}</b> twist deck`:"the twist deck for your board side";
+ const items=[
+  {t:r===1?`<b>First turn:</b> the attacker (${st.attacker!=null?sideName(g,st.attacker):"?"}) chose who goes first.`:`<b>Priority roll:</b> both roll a dice — the winner chooses who takes the first turn. Tie: whoever went first last round chooses.`,
+   x:`<div class="row" style="margin-top:6px">${[0,1].map(sd=>`<button class="btn sm ${ft===sd?"pri":""}" ${edit?`data-act="roundFirst" data-v="${sd}"`:"disabled"}>${sideName(g,sd)} first</button>`).join("")}</div>`},
+  {t:under!=null?`<b>Underdog:</b> ${sideName(g,under)} (behind by ${Math.abs(t[0]-t[1])} VP). Twist cards and some abilities help them.`:`<b>Underdog:</b> none — scores are level.`},
+  {t:`<b>Twist card:</b> draw 1 from ${twistDeck} and read it out. It lasts this battle round.`},
+  {t:r===1?`<b>Battle tactics:</b> each ${g.mode==="2v2"?"team":"player"} draws 3 battle tactic cards.`:`<b>Battle tactics:</b> discard any cards you don't want (face up), then draw back up to 3.`+(dbl?`<div class="warn">⚠ ${sideName(g,ft)} went second last round and first this round (double turn) — they don't draw battle tactic cards this round unless they're the underdog.</div>`:"")},
+  {t:`<b>Start of round abilities:</b> use any abilities that say “Start of Battle Round”.`}];
+ const done=items.every((_,i)=>ck[i]);
+ return`<details class="rp" ${done?"":"open"}><summary>${done?"✅":"📋"} Start of battle round ${r}${done?" — all done":""}</summary>
+ ${items.map((it,i)=>`<label class="ck"><input type="checkbox" ${ck[i]?"checked":""} ${edit?`data-ch="rck" data-v="${i}"`:"disabled"}><span>${it.t}${it.x||""}</span></label>`).join("")}</details>`;
+}
+function scoreHelp(g,edit){
+ if(!edit)return"";
+ const rows=[["Holding 1+ objectives","obj1"],["Holding 2+ objectives","obj2"],["Holding more objectives than the enemy","more"],["Each battle tactic completed","bt"]];
+ return`<details class="rp" id="shd" style="margin-top:10px" ${ui.shOpen?"open":""}><summary>🎯 End of turn — score VP</summary>
+ <p class="small muted" style="margin:6px 0">At the end of <b>each</b> turn, the player whose turn it was scores. Tap what they earned (adds to round ${g.round}). Used or scored battle tactic cards are discarded.</p>
+ <table class="sh"><tr><th></th>${[0,1].map(sd=>`<th>${sideName(g,sd)}</th>`).join("")}</tr>
+ ${rows.map(([l,k])=>`<tr><td>${l}</td>${[0,1].map(sd=>`<td><button class="btn sm" data-act="vpq" data-v="${sd}:${esc(l)}">+1</button></td>`).join("")}</tr>`).join("")}</table></details>`;
+}
 function vGame(id){
  const g=S.games.find(x=>x.id===id);
  if(!g)return`<div class="card empty">This game isn't here any more — it may have been abandoned.<br><br><a class="btn" href="#ladder">Back to ladder</a></div>`;
@@ -649,13 +680,13 @@ function vGame(id){
   ${g.final_only&&!isAdmin?"":`<div class="card"><h2>By round</h2>${roundGrid(g,isAdmin)}${isAdmin?`<div class="row" style="margin-top:10px"><div class="chk"><label><input type="checkbox" id="fix-ladder" ${g.ladder!==false?"checked":""}> Counts toward ladder</label></div><button class="btn pri" data-act="fixGame" data-v="${g.id}">Save fix</button><button class="btn dan" data-confirm data-act="delGame" data-v="${g.id}">Delete game</button></div>`:""}</div>`}
   <a class="btn" href="#ladder">← Ladder</a>`}
  if(!st.done)return arena(g)+vSetup(g,edit);
- const firsts=st.firsts||{},ft=g.round===1?(firsts["1"]!=null?firsts["1"]:st.first_turn):firsts[String(g.round)];
- const ftRow=`<div class="row" style="justify-content:center;margin-bottom:8px"><span class="small muted">${g.round===1?"First turn (attacker's choice)":"Priority roll — first turn"}:</span>${[0,1].map(sd=>`<button class="btn sm ${ft===sd?"pri":""}" ${edit?`data-act="roundFirst" data-v="${sd}"`:"disabled"}>${sideName(g,sd)}</button>`).join("")}</div>`;
+ const ftRow=roundPanel(g,edit,under,t);
  return`${arena(g)}<div class="card"><div class="row between"><span class="pill live">LIVE · ${g.mode}</span><span class="small muted">${edit?"You're scoring — every phone updates live":"Watching live"}</span></div>
  <div class="rounds" style="margin-top:10px">${Array.from({length:N},(_,i)=>`<button class="${g.round===i+1?"on":""}" ${edit?`data-act="round" data-v="${i+1}"`:"disabled"}>${i+1}</button>`).join("")}</div>
  <div class="small muted" style="text-align:center;margin-bottom:6px">Battle round ${g.round} of ${N}${under!=null?` · underdog: <b>${esc(tn(g.teams[under]))}</b> (${Math.abs(t[0]-t[1])} behind)`:" · scores level"}</div>
  ${ftRow}
  <div class="live">${sideCard(g,0,edit)}${sideCard(g,1,edit)}</div>
+ ${scoreHelp(g,edit)}
  <div style="margin-top:12px">${roundGrid(g,false)}</div>${setupSummary(g)}
  ${edit?`<div class="row between" style="margin-top:14px"><button class="btn dan" data-confirm data-act="abandon" data-v="${g.id}">Abandon</button><div class="row">${g.round<N?`<button class="btn" data-act="round" data-v="${g.round+1}">Next round →</button>`:""}<button class="btn pri" data-confirm data-act="finish" data-v="${g.id}">Finish game</button></div></div>`:""}</div>`;
 }
@@ -761,6 +792,7 @@ const A={
  saveFac:async()=>{const wb=val("me-wb");await api("PATCH","/api/players/"+ME.pid,{warband:wb,faction:facOf(wb)});toast("Saved",true);go("ladder")},
  delMe:async()=>{await api("DELETE","/api/players/"+ME.pid);setMe(null);toast("Account deleted",true);go("welcome")},
  statBy:v=>{ui.statBy=v;render()},
+ vpq:v=>{const i=v.indexOf(":"),s0=Number(v.slice(0,i)),lab=v.slice(i+1),id=route().a,g=S.games.find(x=>x.id===id);api("POST",`/api/games/${id}/vp`,{side:s0,delta:1,round:g.round}).then(()=>{render();toast(`+1 VP ${pn(g.teams[s0][0])}${g.teams[s0].length>1?" & co":""} — ${lab}`,true)}).catch(()=>{})},
  setPick:v=>{const[k,sd]=v.split(":");const b={[k]:Number(sd)};if(k==="first_turn")b.round_first={round:1,side:Number(sd)};api("POST",`/api/games/${route().a}/setup`,b).then(render).catch(()=>{})},
  setRealm:v=>{api("POST",`/api/games/${route().a}/setup`,{realm:v}).then(render).catch(()=>{})},
  setStep:v=>{api("POST",`/api/games/${route().a}/setup`,{step:Number(v)}).then(render).catch(()=>{})},
@@ -807,7 +839,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-act]");if(
 document.addEventListener("change",e=>{const el=e.target,k=el.dataset&&el.dataset.ch;if(!k)return;
  if(k==="slot"){const p=P(el.value),f=document.getElementById("w-"+el.dataset.v);if(p&&f)f.value=p.warband||""}
  else if(k==="final"){ui.finalOnly=el.checked;render()}
+ else if(k==="rck"){const g=S.games.find(x=>x.id===route().a);api("POST",`/api/games/${g.id}/setup`,{check:{round:g.round,i:Number(el.dataset.v),val:el.checked}}).then(render).catch(()=>{})}
  else if(k==="here"){ls.set(HERE_KEY,JSON.stringify([...document.querySelectorAll(".here:checked")].map(x=>x.value)))}});
+document.addEventListener("toggle",e=>{if(e.target&&e.target.id==="shd")ui.shOpen=e.target.open},true);
 window.addEventListener("hashchange",()=>{const {v}=route();if(v==="new"&&!/^#new/.test(ui._prev||""))ui.newMode="1v1";ui._prev=location.hash;render();window.scrollTo(0,0)});
 if(NATIVE&&PLUG.App){
  PLUG.App.addListener("backButton",()=>{const{v}=route();if(["ladder","welcome","connect"].includes(v)||!location.hash)PLUG.App.exitApp();else history.back()});
