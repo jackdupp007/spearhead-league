@@ -640,7 +640,7 @@ function vSetup(g,edit){
  <div class="steps">${SETUP_STEPS.map((x,k)=>`<i class="${k<i?"done":k===i?"on":""}"></i>`).join("")}</div>
  <h2 style="margin:6px 0">${S0.t}</h2><p style="margin:0">${d}</p>${ctl}
  ${edit?`<div class="row between" style="margin-top:16px"><button class="btn" ${i?`data-act="setStep" data-v="${i-1}"`:"disabled"}>← Back</button>${S0.last?`<button class="btn pri" data-act="setDone">Start the battle ⚔</button>`:`<button class="btn pri" ${nextOk?`data-act="setStep" data-v="${i+1}"`:"disabled"}>Next →</button>`}</div>
- <p class="small muted" style="margin-top:10px">Both phones follow along. <a href="#" data-act="setSkip" style="color:var(--mut)">Skip setup</a></p>`:`<p class="small muted">The players are setting up — scoring starts when they're done.</p>`}
+ <div class="row between" style="margin-top:12px"><span class="small muted">Both phones follow along. <a href="#" data-act="setSkip" style="color:var(--mut)">Skip setup</a></span><button class="btn sm dan" data-confirm data-act="abandon" data-v="${g.id}">Abandon game</button></div>`:`<p class="small muted">The players are setting up — scoring starts when they're done.</p>`}
  ${setupSummary(g)}</div>`;
 }
 function firstOf(g,r){const st=g.setup||{},f=st.firsts||{};return r===1?(f["1"]!=null?f["1"]:st.first_turn):f[String(r)]}
@@ -753,6 +753,8 @@ function vAdmin(){
  <div class="card"><h2>Players</h2><div class="tw"><table>${players().map(p=>{const n=S.games.filter(g=>inGame(g,p.id)).length;return`<tr><td><input id="pn-${p.id}" data-keep value="${esc(p.name)}" style="width:100%"></td><td class="n small muted">${n} games</td><td style="text-align:right;white-space:nowrap"><button class="btn sm" data-act="rename" data-v="${p.id}">Rename</button> ${n?"":`<button class="btn sm dan" data-confirm data-act="delPlayer" data-v="${p.id}">Delete</button>`}</td></tr>
  <tr><td colspan="3" style="border-bottom:1px solid var(--line)"><div class="row"><span class="small muted grow">${p.has_pin?"Has a PIN":"No PIN yet"}</span><input id="pr-${p.id}" type="password" inputmode="numeric" maxlength="6" placeholder="New PIN" style="width:110px"><button class="btn sm" data-act="resetPin" data-v="${p.id}">Reset PIN</button></div></td></tr>`}).join("")}</table></div>
  <p class="small muted">To fix or delete a result, open it from History.</p></div>
+ <div class="card"><h2>Live games</h2>${liveGames().length?liveGames().map(g=>`<div class="row between" style="padding:6px 0;border-bottom:1px solid #2a2530"><span><b>${esc(tn(g.teams[0]))}</b> vs <b>${esc(tn(g.teams[1]))}</b><div class="fac">${g.mode} · started ${fdate(g.created)} · ${(g.setup||{}).done?"round "+g.round:"still in setup"}</div></span><span class="row"><a class="btn sm" href="#game/${g.id}">Open</a><button class="btn sm dan" data-confirm data-act="abandon" data-v="${g.id}">Cancel</button></span></div>`).join(""):`<p class="small muted" style="margin:0">No live games.</p>`}
+ <p class="small muted">Cancelling removes a game that never finished — no ladder points change.</p></div>
  <div class="card"><h2>Merge accounts</h2><p class="small muted" style="margin-top:0">For someone with two accounts: moves every game from the first into the second, then removes the first. Their warband choices stay with each game.</p>
  <div class="row"><select id="mg-from" class="grow">${plOpts("")}</select><span>into</span><select id="mg-into" class="grow">${plOpts("")}</select><button class="btn pri" data-confirm data-act="merge">Merge</button></div></div>
  <div class="card"><h2>Extra warbands</h2><p class="small muted" style="margin-top:0">New Spearhead not in the list yet? Add it here and it appears for everyone.</p>
@@ -817,7 +819,7 @@ const A={
  cp:v=>{const[pid,d]=v.split(":"),id=route().a;api("POST",`/api/games/${id}/cp`,{pid,delta:Number(d)}).then(render).catch(()=>{})},
  round:v=>{api("POST",`/api/games/${route().a}/round`,{round:Number(v)}).then(render).catch(()=>{})},
  finish:async v=>{await api("POST",`/api/games/${v}/finish`);render()},
- abandon:async v=>{await api("POST",`/api/games/${v}/abandon`);go("ladder")},
+ abandon:async v=>{await api("POST",`/api/games/${v}/abandon`);toast("Game abandoned",true);if(route().v==="admin")render();else go("ladder")},
  sug:v=>{const ids=[...document.querySelectorAll(".here:checked")].map(e=>e.value);ui.sug=v==="1v1"?Object.assign({mode:"1v1"},suggest1v1(ids)):Object.assign({mode:"2v2"},suggest2v2(ids));render()},
  hereAll:()=>{ls.set(HERE_KEY,JSON.stringify(S.players.map(p=>p.id)));render()},
  hereNone:()=>{ls.set(HERE_KEY,"[]");ui.sug=null;render()},
